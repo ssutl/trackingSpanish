@@ -1,6 +1,6 @@
     console.log('Background script loaded');
     
-    const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
+        const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
 
     // A global promise to avoid concurrency issues
     let creatingOffscreenDocument;
@@ -19,19 +19,19 @@
     async function setupOffscreenDocument(path) {
       // If we do not have a document, we are already setup and can skip
       if (!(await hasDocument())) {
-        // Create offscreen document
-        if (creatingOffscreenDocument) {
-          await creatingOffscreenDocument;
+        // create offscreen document
+        if (creating) {
+          await creating;
         } else {
-          creatingOffscreenDocument = chrome.offscreen.createDocument({
+          creating = chrome.offscreen.createDocument({
             url: path,
             reasons: [
                 chrome.offscreen.Reason.DOM_SCRAPING
             ],
             justification: 'authentication'
           });
-          await creatingOffscreenDocument;
-          creatingOffscreenDocument = null;
+          await creating;
+          creating = null;
         }
       }
     }
@@ -45,43 +45,48 @@
 
     function getAuth() {
       return new Promise(async (resolve, reject) => {
-        try {
-          const auth = await chrome.runtime.sendMessage({
-            type: 'firebase-auth',
-            target: 'offscreen'
-          });
-          if (auth && auth.name !== 'FirebaseError') {
-            resolve(auth);
-          } else {
-            reject(auth);
-          }
-        } catch (error) {
-          reject(error);
-        }
-      });
+        const auth = await chrome.runtime.sendMessage({
+          type: 'firebase-auth',
+          target: 'offscreen'
+        });
+        auth?.name !== 'FirebaseError' ? resolve(auth) : reject(auth);
+      })
     }
 
     async function firebaseAuth() {
       await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
 
-      let auth;
-      try {
-        auth = await getAuth();
-        console.log('User Authenticated', auth);
-      } catch (err) {
-        if (err.code === 'auth/operation-not-allowed') {
-          console.error('You must enable an OAuth provider in the Firebase console in order to use signInWithPopup. This sample uses Google by default.');
-        } else {
-          console.error(err);
-        }
-      } finally {
-        await closeOffscreenDocument();
-      }
+      const auth = await getAuth()
+        .then((auth) => {
+          console.log('User Authenticated', auth);
+          return auth;
+        })
+        .catch(err => {
+          if (err.code === 'auth/operation-not-allowed') {
+            console.error('You must enable an OAuth provider in the Firebase' +
+                          ' console in order to use signInWithPopup. This sample' +
+                          ' uses Google by default.');
+          } else {
+            console.error(err);
+            return err;
+          }
+        })
+        .finally(closeOffscreenDocument)
 
       return auth;
     }
     
+    
     chrome.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch((error) => console.error(error));
+
+    chrome.runtime.onMessage.addListener(function(request) {
+      if(request.message === "sign_in"){
+        console.log("auth processing");
+        firebaseAuth();
+      }
+    });
+
+
     

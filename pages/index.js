@@ -2,20 +2,18 @@ import React from 'react';
 
 export default function Home() {
 
-  // const handleSignIn = async () => {
-    // chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    //   chrome.tabs.sendMessage(tabs[0].id, { message: "sign_in" }, async (response) => {
-    //     console.log(response);
-    //   });
-    // });
-
-    //send message to background.js
-  //   chrome.runtime.sendMessage({message:"sign_in"});
-  // };
+  const handleSignIn = async () => {
+    // send message to background.js
+    chrome.runtime.sendMessage({message:"sign_in"});
+  };
 
 
   return (
     <div>
+      <button onClick={(e)=>{
+        e.preventDefault();
+        handleSignIn();
+      }}>Sign In</button>
     </div>
   );
 }
