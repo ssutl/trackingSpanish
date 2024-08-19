@@ -79,4 +79,10 @@
 
       return auth;
     }
+
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.message === 'sign_in') {
+        console.log('Sign In Request');
+      }
+    });
     
