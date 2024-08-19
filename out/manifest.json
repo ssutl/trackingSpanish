@@ -32,5 +32,8 @@
   },
   "action": {
     "default_title": "Click to open panel"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com; object-src 'self'"
   }
 }
