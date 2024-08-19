@@ -80,17 +80,7 @@
 
       return auth;
     }
-
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.message === 'sign_in') {
-        console.log('Sign In Request received');
-        firebaseAuth().then((auth) => {
-          console.log("Successful authentication");
-        });
-        return true;
-      }
-    });
-
+    
     chrome.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch((error) => console.error(error));
