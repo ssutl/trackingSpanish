@@ -1,9 +1,9 @@
-    console.log('Background script loaded');
-    
-        const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
+console.log('Background script loaded');
+
+    const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
 
     // A global promise to avoid concurrency issues
-    let creatingOffscreenDocument;
+    let creating = null;
 
     // Chrome only allows for a single offscreenDocument. This is a helper function
     // that returns a boolean indicating if a document is already active.
@@ -76,17 +76,13 @@
       return auth;
     }
     
-    
-    chrome.sidePanel
-    .setPanelBehavior({ openPanelOnActionClick: true })
-    .catch((error) => console.error(error));
 
-    chrome.runtime.onMessage.addListener(function(request) {
-      if(request.message === "sign_in"){
-        console.log("auth processing");
-        firebaseAuth();
-      }
-    });
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error(error));
 
-
-    
+chrome.runtime.onMessage.addListener(function(request) {
+  if (request.message === "sign_in") {
+    firebaseAuth();
+  }
+});

@@ -13,14 +13,14 @@
   "permissions": ["offscreen", "sidePanel"],
   "web_accessible_resources": [
     {
-      "resources": ["index.html"],
+      "resources": ["index.html","offscreen.html"],
       "matches": ["<all_urls>"]
     }
   ],
   "content_scripts": [
     {
       "matches": ["https://*/*", "http://*/*"],
-      "js": ["inject.js"]
+      "js": ["inject.js", "offscreen.js"]
     }
   ],
   "background": {

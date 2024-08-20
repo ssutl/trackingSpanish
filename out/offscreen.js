@@ -1,17 +1,10 @@
+    console.log('offscreen.js loaded');
+    
     // This URL must point to the public site
     const _URL = 'https://tracking-spanish-login.vercel.app';
+        // This URL must point to the public site
     const iframe = document.createElement('iframe');
     iframe.src = _URL;
-    iframe.allowFullscreen = true;
-
-    // Style the iframe to make it full-screen
-    iframe.style.position = 'fixed';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none'; // Optional: remove border if needed
-    iframe.style.zIndex = '9999'; // Optional: bring the iframe to the front
     document.documentElement.appendChild(iframe);
     chrome.runtime.onMessage.addListener(handleChromeMessages);
 
@@ -46,4 +39,5 @@
       iframe.contentWindow.postMessage({"initAuth": true}, new URL(_URL).origin);
       return true;
     }
+    
     
