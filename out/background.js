@@ -3,7 +3,7 @@ console.log('Background script loaded');
     const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
 
     // A global promise to avoid concurrency issues
-    let creating = null;
+    let creating;
 
     // Chrome only allows for a single offscreenDocument. This is a helper function
     // that returns a boolean indicating if a document is already active.

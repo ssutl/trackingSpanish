@@ -20,7 +20,7 @@
   "content_scripts": [
     {
       "matches": ["https://*/*", "http://*/*"],
-      "js": ["inject.js", "offscreen.js"]
+      "js": ["inject.js"]
     }
   ],
   "background": {
