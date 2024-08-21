@@ -96,6 +96,22 @@ export default function Home() {
     }
   };
 
+  const fetchVideoData = async (video_url: string) => {
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = video_url.match(regExp);
+    const videoId = match && match[2].length === 11 ? match[2] : null;
+
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${user.apiKey}`;
+
+    try {
+      const response = await axios.get(url);
+      console.log("Video data", response);
+    } catch (error) {
+      console.error("Error fetching video data", error);
+    }
+  };
+
   return (
     <div>
       {user ? (
@@ -109,6 +125,7 @@ export default function Home() {
           >
             Sign Out
           </button>
+          <button onClick={fetchVideoData}>Fetch Video Data</button>
         </div>
       ) : (
         <button
