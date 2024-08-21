@@ -15,9 +15,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/chrome": "^0.0.270",
+    "axios": "^1.7.4",
     "glob": "^10.2.3",
     "next": "^13.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.4.1",
+    "@types/react": "18.3.4",
+    "eslint": "^9.9.0",
+    "typescript": "5.5.4"
   }
 }
