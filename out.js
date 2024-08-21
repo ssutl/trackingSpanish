@@ -17,6 +17,7 @@ const offscreenJsSource = path.join(__dirname, 'public', 'offscreen.js');
 const offscreenJsDestination = path.join(__dirname, 'out', 'offscreen.js');
 fs.copyFileSync(offscreenJsSource, offscreenJsDestination);
 
+
 // Modify HTML files
 const files = glob.sync('out/**/*.html');
 files.forEach((file) => {

@@ -104,6 +104,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
+// Listen to messages to fetch youtube video data
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Message received:', request);
+  if (request.message === 'fetch_video_data') {
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = request.video_url.match(regExp);
+    const videoId = match && match[2].length === 11 ? match[2] : null;
+
+    if (!videoId) {
+      sendResponse({ success: false, error: "Invalid YouTube video URL" });
+      return true;
+    }
+
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${request.apiKey}`;
+
+      fetch(url)
+        .then((response) => response.json())  // Convert response to JSON
+        .then((data) => {
+          sendResponse({ success: true, data: data });
+        })
+        .catch((error) => {
+          sendResponse({ success: false, error: error.message });
+        });
+    
+
+    // Indicate that the response is asynchronous
+    return true;
+  }
+});
+
 // Configure side panel behavior
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
   .catch((error) => console.error('SidePanel error:', error));
