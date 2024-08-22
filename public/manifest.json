@@ -10,10 +10,10 @@
     "48": "/icons/icon48.png",
     "192": "/icons/icon192.png"
   },
-  "permissions": ["offscreen", "sidePanel","storage"],
+  "permissions": ["offscreen", "sidePanel", "storage", "tabs", "activeTab"],
   "web_accessible_resources": [
     {
-      "resources": ["index.html","offscreen.html"],
+      "resources": ["index.html", "offscreen.html"],
       "matches": ["<all_urls>"]
     }
   ],
@@ -36,7 +36,9 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
-    "sandbox": {
-    "pages": ["https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com"]
+  "sandbox": {
+    "pages": [
+      "https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com"
+    ]
   }
 }

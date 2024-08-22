@@ -35,19 +35,6 @@ export default function Home() {
     }
   };
 
-  const handleFetchVideoData = async () => {
-    // send message to background.js
-    const res = await chrome.runtime.sendMessage({
-      message: "fetch_video_data",
-      video_url: "https://www.youtube.com/watch?v=h5ywteO5Mjc",
-      apiKey: user.apiKey,
-    });
-
-    if (res.success) {
-      console.log("Video data fetched", res.data);
-    }
-  };
-
   return (
     <div>
       {user ? (
@@ -60,14 +47,6 @@ export default function Home() {
             }}
           >
             Sign Out
-          </button>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              handleFetchVideoData();
-            }}
-          >
-            Fetch Video Data
           </button>
         </div>
       ) : (
