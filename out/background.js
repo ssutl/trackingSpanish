@@ -1,13 +1,32 @@
-console.log('Background script loaded');
+console.log("Background script loaded");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  get,
+  child,
+  set,
+} from "https://www.gstatic.com/firebasejs/9.6.8/firebase-database.js";
 
-const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
+const firebaseConfig = {
+  apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
+  databaseURL:
+    "https://trackingspanish-default-rtdb.europe-west1.firebasedatabase.app",
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
+const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 
 let creating; // Global promise to avoid concurrency issues
 
 // Helper function to check if an offscreen document is already active
 async function hasDocument() {
   const matchedClients = await clients.matchAll();
-  return matchedClients.some((c) => c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH));
+  return matchedClients.some(
+    (c) => c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)
+  );
 }
 
 // Set up an offscreen document if it doesn't exist
@@ -19,7 +38,7 @@ async function setupOffscreenDocument(path) {
       creating = chrome.offscreen.createDocument({
         url: path,
         reasons: [chrome.offscreen.Reason.DOM_SCRAPING],
-        justification: 'authentication',
+        justification: "authentication",
       });
       await creating;
       creating = null;
@@ -38,11 +57,11 @@ async function closeOffscreenDocument() {
 async function getAuth() {
   try {
     const auth = await chrome.runtime.sendMessage({
-      type: 'firebase-auth',
-      target: 'offscreen',
+      type: "firebase-auth",
+      target: "offscreen",
     });
-    if (auth?.name === 'FirebaseError') {
-      throw new Error(auth.message || 'Firebase authentication error');
+    if (auth?.name === "FirebaseError") {
+      throw new Error(auth.message || "Firebase authentication error");
     }
     return auth;
   } catch (error) {
@@ -56,13 +75,15 @@ async function firebaseAuth() {
     await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
 
     const auth = await getAuth();
-    
+
     // Persist user data in chrome.storage.local
     await chrome.storage.local.set({ user: auth.user });
+
+    await saveUserToDatabase(auth.user);
     // Notify success
     return auth;
   } catch (error) {
-    console.error('Authentication error:', error.message);
+    console.error("Authentication error:", error.message);
     throw error;
   } finally {
     await closeOffscreenDocument();
@@ -70,11 +91,11 @@ async function firebaseAuth() {
 }
 
 async function firebaseSignOut() {
-  try{
-    await chrome.storage.local.remove('user');
+  try {
+    await chrome.storage.local.remove("user");
     return true;
-  }catch(error){
-    console.error('Sign out error:', error.message);
+  } catch (error) {
+    console.error("Sign out error:", error.message);
     throw error;
   }
 }
@@ -82,18 +103,17 @@ async function firebaseSignOut() {
 // Handle messages from the extension
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
-    if (request.message === 'sign_in') {
+    if (request.message === "sign_in") {
       firebaseAuth().then((auth) => {
         if (auth) {
-            console.log('User signed in:', auth.user);
-            sendResponse({ success: true, type: 'sign_in'});
+          console.log("User signed in:", auth.user);
+          sendResponse({ success: true, type: "sign_in" });
         }
       });
-     
-    } else if (request.message === 'sign_out') {
+    } else if (request.message === "sign_out") {
       firebaseSignOut().then(() => {
-        console.log('User signed out');
-        sendResponse({ success: true, type: 'sign_out'});
+        console.log("User signed out");
+        sendResponse({ success: true, type: "sign_out" });
       });
     }
   } catch (error) {
@@ -104,37 +124,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// Listen to messages to fetch youtube video data
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Message received:', request);
-  if (request.message === 'fetch_video_data') {
-    const regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = request.video_url.match(regExp);
-    const videoId = match && match[2].length === 11 ? match[2] : null;
+// Check if a user exists in the database
+async function userExists(userId) {
+  const dbRef = ref(database);
+  const snapshot = await get(child(dbRef, `Users/${userId}`));
+  return snapshot.exists();
+}
 
-    if (!videoId) {
-      sendResponse({ success: false, error: "Invalid YouTube video URL" });
-      return true;
-    }
-
-    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${request.apiKey}`;
-
-      fetch(url)
-        .then((response) => response.json())  // Convert response to JSON
-        .then((data) => {
-          sendResponse({ success: true, data: data });
-        })
-        .catch((error) => {
-          sendResponse({ success: false, error: error.message });
-        });
-    
-
-    // Indicate that the response is asynchronous
-    return true;
+// Save user to Firebase Realtime Database
+async function saveUserToDatabase(user) {
+  const userId = user.uid;
+  if (!(await userExists(userId))) {
+    await set(ref(database, `Users/${userId}`), {
+      name: user.displayName || null,
+      total_minutes: 0,
+      total_minutes_today: 0,
+      total_minutes_synced_with_ds: 0,
+    });
+    console.log(`User ${userId} saved to database.`);
+  } else {
+    console.log(`User ${userId} already exists in database.`);
   }
-});
+}
 
 // Configure side panel behavior
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error('SidePanel error:', error));
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error("SidePanel error:", error));
