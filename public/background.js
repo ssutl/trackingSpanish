@@ -21,6 +21,47 @@ const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 
 let creating; // Global promise to avoid concurrency issues
 
+const keywords = [
+  "spanish",
+  "Spanish vlog",
+  "Spanish food",
+  "Spanish cuisine",
+  "budget eats",
+  "learning Spanish",
+  "Spanish vocabulary",
+  "Spanish culture",
+  "cheap food in Spain",
+  "Spanish language practice",
+  "spanish teacher",
+  "vlog in spanish",
+  "vlog in spain",
+  "spain on a budget",
+  "spanish supermarket",
+  "food for less than $1",
+  "1 euro",
+  "1 dolar",
+  "how to learn spanish",
+  "basic spanish phrases",
+  "learning spanish",
+  "life in spain",
+  "subtitles",
+  "english subtitles",
+  "study spanish vlog",
+  "study spanish abroad",
+  "travel vlog spain",
+  "vlog",
+  "spanish vlog",
+  "barcelona vlog",
+  "barcelona",
+  "spanish",
+  "speaking spanish for 24 hours",
+  "productive vlog",
+  "language learning",
+  "learning Spanish",
+  "study Spanish",
+  "learn Spanish",
+];
+
 // Helper function to check if an offscreen document is already active
 async function hasDocument() {
   const matchedClients = await clients.matchAll();
@@ -137,8 +178,15 @@ async function saveUserToDatabase(user) {
   if (!(await userExists(userId))) {
     await set(ref(database, `Users/${userId}`), {
       name: user.displayName || null,
-      total_minutes: 0,
-      total_minutes_today: 0,
+      watched_info: {
+        //start with todays date and 0 minutes watched only need day month year cannot contain ".", "#", "$", "/", "[", or "]" use - instead
+        [new Date()
+          .toLocaleDateString()
+          .replace(/\./g, "-")
+          .replace(/\//g, "-")
+          .replace(/\[/g, "-")
+          .replace(/\]/g, "-")]: 0,
+      }, // Initialize as empty object
       total_minutes_synced_with_ds: 0,
     });
     console.log(`User ${userId} saved to database.`);
@@ -146,6 +194,71 @@ async function saveUserToDatabase(user) {
     console.log(`User ${userId} already exists in database.`);
   }
 }
+
+// Get youtube video details
+async function fetchVideoDetails(user, videoId) {
+  const apiKey = user.apiKey; // Replace with your YouTube API key
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    if (data.items && data.items.length > 0) {
+      return data.items[0].snippet;
+    } else {
+      throw new Error("Video not found");
+    }
+  } catch (error) {
+    console.error("Error fetching video details:", error);
+    return null;
+  }
+}
+
+// Call the API to get video details whenever tab is updated
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete") {
+    chrome.storage.local.get("user", (result) => {
+      const user = result.user;
+      if (user && user.apiKey) {
+        try {
+          const url = new URL(tab.url);
+          if (url.hostname === "www.youtube.com" && url.pathname === "/watch") {
+            const videoId = url.searchParams.get("v");
+            if (videoId) {
+              fetchVideoDetails(user, videoId)
+                .then((videoDetails) => {
+                  console.log("videoDetails", videoDetails);
+                  //If videodefaultLanguage is spanish set local storage "watching_spanish" to true
+
+                  const lowerCaseTags = videoDetails.tags.map((tag) =>
+                    tag.toLowerCase()
+                  );
+
+                  const isWatchingSpanish = lowerCaseTags.some((tag) =>
+                    keywords.map((word) => word.toLowerCase()).includes(tag)
+                  );
+
+                  if (
+                    videoDetails.defaultAudioLanguage === "es" ||
+                    isWatchingSpanish
+                  ) {
+                    chrome.storage.local.set({ watching_spanish: true });
+                  } else {
+                    chrome.storage.local.set({ watching_spanish: false });
+                  }
+                })
+                .catch((error) => {
+                  console.error("Error fetching video details:", error);
+                });
+            }
+          }
+        } catch (error) {
+          console.error("Error processing URL:", error);
+        }
+      }
+    });
+  }
+});
 
 // Configure side panel behavior
 chrome.sidePanel
