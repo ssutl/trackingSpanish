@@ -238,14 +238,18 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                     keywords.map((word) => word.toLowerCase()).includes(tag)
                   );
 
-                  if (
-                    videoDetails.defaultAudioLanguage.includes("es") ||
-                    isWatchingSpanish
-                  ) {
-                    chrome.storage.local.set({ watching_spanish: true });
-                  } else {
-                    chrome.storage.local.set({ watching_spanish: false });
-                  }
+                  const watchingSpanish =
+                    videoDetails.defaultAudioLanguage
+                      .toLowerCase()
+                      .includes("es") || isWatchingSpanish;
+
+                  chrome.storage.local.set({
+                    watching_spanish: watchingSpanish,
+                  });
+
+                  chrome.runtime.sendMessage({
+                    watchingSpanish: watchingSpanish,
+                  });
                 })
                 .catch((error) => {
                   console.error("Error fetching video details:", error);
