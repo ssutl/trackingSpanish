@@ -192,6 +192,7 @@ async function saveUserToDatabase(user) {
           .replace(/\]/g, "-")]: 0,
       }, // Initialize as empty object
       total_minutes_synced_with_ds: 0,
+      daily_goal: 10,
     });
     console.log(`User ${userId} saved to database.`);
   } else {
