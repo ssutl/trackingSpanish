@@ -230,16 +230,16 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                   console.log("videoDetails", videoDetails);
                   //If videodefaultLanguage is spanish set local storage "watching_spanish" to true
 
-                  const lowerCaseTags = videoDetails.tags.map((tag) =>
-                    tag.toLowerCase()
-                  );
+                  const lowerCaseTags = videoDetails.tags
+                    ? videoDetails.tags.map((tag) => tag.toLowerCase())
+                    : [];
 
                   const isWatchingSpanish = lowerCaseTags.some((tag) =>
                     keywords.map((word) => word.toLowerCase()).includes(tag)
                   );
 
                   if (
-                    videoDetails.defaultAudioLanguage === "es" ||
+                    videoDetails.defaultAudioLanguage.includes("es") ||
                     isWatchingSpanish
                   ) {
                     chrome.storage.local.set({ watching_spanish: true });
