@@ -316,6 +316,39 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
+// Listen to content script sent message about watching time
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.type === "WATCHED_ONE_MINUTE") {
+    console.log("One minute watched.");
+    chrome.storage.local.get(["user", "watching_spanish"], (result) => {
+      const user = result.user;
+      const watchingSpanish = result.watching_spanish;
+
+      if (user && watchingSpanish) {
+        const userId = user.uid;
+        const date = new Date()
+          .toLocaleDateString()
+          .replace(/\./g, "-")
+          .replace(/\//g, "-")
+          .replace(/\[/g, "-")
+          .replace(/\]/g, "-");
+        const dbRef = ref(database, `Users/${userId}/watched_info/${date}`);
+
+        get(dbRef)
+          .then((snapshot) => {
+            const currentMinutes = snapshot.exists() ? snapshot.val() : 0;
+            set(dbRef, currentMinutes + 1).then(() => {
+              console.log("One minute watched saved to database.");
+            });
+          })
+          .catch((error) => {
+            console.error("Error saving watched time:", error);
+          });
+      }
+    });
+  }
+});
+
 // Configure side panel behavior
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
