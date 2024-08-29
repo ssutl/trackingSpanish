@@ -267,6 +267,10 @@ function checkYouTubeVideo(tabId) {
                   console.error("Error fetching video details:", error);
                 });
             }
+          } else {
+            chrome.storage.local.set({
+              watching_spanish: false,
+            });
           }
         } catch (error) {
           console.error("Error processing URL:", error);
@@ -316,33 +320,32 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-// Listen to content script sent message about watching time
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+// When you hear messages from the content script to increment the time
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "WATCHED_ONE_MINUTE") {
-    console.log("One minute watched.");
-    chrome.storage.local.get(["user", "watching_spanish"], (result) => {
+    chrome.storage.local.get("user", (result) => {
       const user = result.user;
-      const watchingSpanish = result.watching_spanish;
-
-      if (user && watchingSpanish) {
+      if (user) {
         const userId = user.uid;
-        const date = new Date()
+        const dbRef = ref(database, `Users/${userId}/watched_info`);
+        const today = new Date()
           .toLocaleDateString()
           .replace(/\./g, "-")
           .replace(/\//g, "-")
           .replace(/\[/g, "-")
           .replace(/\]/g, "-");
-        const dbRef = ref(database, `Users/${userId}/watched_info/${date}`);
 
-        get(dbRef)
+        get(child(dbRef, today))
           .then((snapshot) => {
-            const currentMinutes = snapshot.exists() ? snapshot.val() : 0;
-            set(dbRef, currentMinutes + 1).then(() => {
-              console.log("One minute watched saved to database.");
-            });
+            if (snapshot.exists()) {
+              const currentMinutes = snapshot.val();
+              set(child(dbRef, today), currentMinutes + 1);
+            } else {
+              set(child(dbRef, today), 1);
+            }
           })
           .catch((error) => {
-            console.error("Error saving watched time:", error);
+            console.error("Error updating watched time:", error);
           });
       }
     });
