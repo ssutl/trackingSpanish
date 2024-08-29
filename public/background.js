@@ -7,6 +7,7 @@ import {
   child,
   set,
 } from "https://www.gstatic.com/firebasejs/9.6.8/firebase-database.js";
+import { franc } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -60,6 +61,9 @@ const keywords = [
   "learning Spanish",
   "study Spanish",
   "learn Spanish",
+  "España",
+  "Español",
+  "Estudiar",
 ];
 
 // Helper function to check if an offscreen document is already active
@@ -214,12 +218,12 @@ async function fetchVideoDetails(user, videoId) {
   }
 }
 
-// Call the API to get video details whenever tab is updated
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete") {
-    chrome.storage.local.get("user", (result) => {
-      const user = result.user;
-      if (user && user.apiKey) {
+// Function to check if the current tab is a YouTube video
+function checkYouTubeVideo(tabId) {
+  chrome.storage.local.get("user", (result) => {
+    const user = result.user;
+    if (user && user.apiKey) {
+      chrome.tabs.get(tabId, (tab) => {
         try {
           const url = new URL(tab.url);
           if (url.hostname === "www.youtube.com" && url.pathname === "/watch") {
@@ -228,7 +232,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
               fetchVideoDetails(user, videoId)
                 .then((videoDetails) => {
                   console.log("videoDetails", videoDetails);
-                  //If videodefaultLanguage is spanish set local storage "watching_spanish" to true
+                  // If video default language is Spanish, set local storage "watching_spanish" to true
 
                   const lowerCaseTags = videoDetails.tags
                     ? videoDetails.tags.map((tag) => tag.toLowerCase())
@@ -238,10 +242,17 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                     keywords.map((word) => word.toLowerCase()).includes(tag)
                   );
 
+                  const defaultAudioLanguage = videoDetails.defaultAudioLanguage
+                    ? videoDetails.defaultAudioLanguage.toLowerCase()
+                    : "";
+
+                  const titleLanguage = franc(videoDetails.title);
+                  const isTitleInSpanish = titleLanguage === "spa";
+
                   const watchingSpanish =
-                    videoDetails.defaultAudioLanguage
-                      .toLowerCase()
-                      .includes("es") || isWatchingSpanish;
+                    defaultAudioLanguage.includes("es") ||
+                    isWatchingSpanish ||
+                    isTitleInSpanish;
 
                   chrome.storage.local.set({
                     watching_spanish: watchingSpanish,
@@ -259,6 +270,46 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         } catch (error) {
           console.error("Error processing URL:", error);
         }
+      });
+    }
+  });
+}
+
+// Listen for tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete") {
+    checkYouTubeVideo(tabId);
+  }
+});
+
+// Listen for tab activation
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  checkYouTubeVideo(activeInfo.tabId);
+});
+
+// Listen for extension installation or startup
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs.length > 0) {
+      checkYouTubeVideo(tabs[0].id);
+    }
+  });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs.length > 0) {
+      checkYouTubeVideo(tabs[0].id);
+    }
+  });
+});
+
+// Listen for changes in local storage (e.g., user sign-in)
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "local" && changes.user) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0) {
+        checkYouTubeVideo(tabs[0].id);
       }
     });
   }
