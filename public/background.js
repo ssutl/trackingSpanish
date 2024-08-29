@@ -323,9 +323,11 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 // When you hear messages from the content script to increment the time
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "WATCHED_ONE_MINUTE") {
-    chrome.storage.local.get("user", (result) => {
+    chrome.storage.local.get(["user", "watching_spanish"], (result) => {
       const user = result.user;
-      if (user) {
+      const watchingSpanish = result.watching_spanish;
+
+      if (user && watchingSpanish) {
         const userId = user.uid;
         const dbRef = ref(database, `Users/${userId}/watched_info`);
         const today = new Date()
@@ -345,7 +347,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
           })
           .catch((error) => {
-            console.error("Error updating watched time:", error);
+            console.error("Error updating watched minutes:", error);
           });
       }
     });
