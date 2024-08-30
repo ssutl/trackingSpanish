@@ -7,6 +7,8 @@ export default function Home() {
   useEffect(() => {
     getUserFromStorage();
 
+    chrome.runtime.sendMessage({ message: "POPUP_OPENED" });
+
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.log("message", message);
       if (message.watchingSpanish !== undefined) {

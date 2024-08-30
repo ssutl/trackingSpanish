@@ -267,9 +267,23 @@ function checkYouTubeVideo(tabId) {
                   console.error("Error fetching video details:", error);
                 });
             }
+          } else {
+            chrome.storage.local.set({
+              watching_spanish: false,
+            });
+
+            chrome.runtime.sendMessage({
+              watchingSpanish: false,
+            });
           }
         } catch (error) {
-          console.error("Error processing URL:", error);
+          chrome.storage.local.set({
+            watching_spanish: false,
+          });
+
+          chrome.runtime.sendMessage({
+            watchingSpanish: false,
+          });
         }
       });
     }
@@ -305,6 +319,18 @@ chrome.runtime.onStartup.addListener(() => {
   });
 });
 
+// Listen for popup opening
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === "POPUP_OPENED") {
+    console.log("Popup opened");
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0) {
+        checkYouTubeVideo(tabs[0].id);
+      }
+    });
+  }
+});
+
 // Listen for changes in local storage (e.g., user sign-in)
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "local" && changes.user) {
@@ -319,9 +345,13 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 // When you hear messages from the content script to increment the time
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "WATCHED_ONE_MINUTE") {
-    chrome.storage.local.get("user", (result) => {
+    chrome.storage.local.get(["user", "watching_spanish"], (result) => {
+      console.log("result", result);
       const user = result.user;
-      if (user) {
+      const watchingSpanish = result.watching_spanish;
+
+      if (user && watchingSpanish) {
+        console.log("Updating watched minutes");
         const userId = user.uid;
         const dbRef = ref(database, `Users/${userId}/watched_info`);
         const today = new Date()
@@ -339,10 +369,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             } else {
               set(child(dbRef, today), 1);
             }
+            sendResponse({ success: true });
           })
           .catch((error) => {
-            console.error("Error updating watched time:", error);
+            console.error("Error updating watched minutes:", error);
+            sendResponse({ success: false, error: error.message });
           });
+      } else {
+        sendResponse({
+          success: false,
+          error: "User not signed in or not watching Spanish content",
+        });
       }
     });
   }
