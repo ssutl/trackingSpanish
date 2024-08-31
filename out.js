@@ -1,11 +1,23 @@
 const fs = require("fs");
 const glob = require("glob");
 const path = require("path");
+const JavaScriptObfuscator = require("javascript-obfuscator");
+
+// Function to obfuscate a JavaScript file
+function obfuscateFile(filePath) {
+  const content = fs.readFileSync(filePath, "utf-8");
+  const obfuscatedContent = JavaScriptObfuscator.obfuscate(content, {
+    compact: true,
+    controlFlowFlattening: true,
+  }).getObfuscatedCode();
+  fs.writeFileSync(filePath, obfuscatedContent, "utf-8");
+}
 
 // Copy background.js from public directory to out directory
 const backgroundSource = path.join(__dirname, "public", "background.js");
 const backgroundDestination = path.join(__dirname, "out", "background.js");
 fs.copyFileSync(backgroundSource, backgroundDestination);
+obfuscateFile(backgroundDestination); // Obfuscate the copied file
 
 // Copy offscreen.html from public directory to out directory
 const offscreenHtmlSource = path.join(__dirname, "public", "offscreen.html");
@@ -16,6 +28,13 @@ fs.copyFileSync(offscreenHtmlSource, offscreenHtmlDestination);
 const offscreenJsSource = path.join(__dirname, "public", "offscreen.js");
 const offscreenJsDestination = path.join(__dirname, "out", "offscreen.js");
 fs.copyFileSync(offscreenJsSource, offscreenJsDestination);
+obfuscateFile(offscreenJsDestination); // Obfuscate the copied file
+
+// Copy inject.js from public directory to out directory
+const injectJsSource = path.join(__dirname, "public", "inject.js");
+const injectJsDestination = path.join(__dirname, "out", "inject.js");
+fs.copyFileSync(injectJsSource, injectJsDestination);
+obfuscateFile(injectJsDestination); // Obfuscate the copied file
 
 // Modify HTML files
 const files = glob.sync("out/**/*.html");
@@ -28,11 +47,6 @@ files.forEach((file) => {
 // Rename _next directory to next
 const sourcePath = "out/_next";
 const destinationPath = "out/next";
-
-fs.rename(sourcePath, destinationPath, (err) => {
-  if (err) {
-    console.error("Error renaming directory:", err);
-  } else {
-    console.log("Directory renamed successfully");
-  }
-});
+if (fs.existsSync(sourcePath)) {
+  fs.renameSync(sourcePath, destinationPath);
+}
