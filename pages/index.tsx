@@ -9,19 +9,26 @@ export default function Home() {
 
     chrome.runtime.sendMessage({ message: "POPUP_OPENED" });
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      console.log("message", message);
-      if (message.watchingSpanish !== undefined) {
-        if (message.watchingSpanish) {
-          console.log("You are watching a Spanish video.");
-          // Perform any actions needed when watching a Spanish video
-          setWatchingSpanish(true);
-        } else {
-          console.log("You are not watching a Spanish video.");
-          // Perform any actions needed when not watching a Spanish video
-          setWatchingSpanish(false);
+    chrome.windows.getCurrent((window) => {
+      const windowId = window.id;
+      const storageKey = `watchingSpanish-${windowId}`;
+
+      // Listen for changes to the specific storage key
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === "local" && changes[storageKey]) {
+          const newValue = changes[storageKey].newValue;
+          console.log(`Storage key ${storageKey} changed to ${newValue}`);
+          setWatchingSpanish(newValue);
         }
-      }
+      });
+
+      // Get the initial value from storage
+      chrome.storage.local.get([storageKey], (result) => {
+        const initialWatchingSpanish = result[storageKey];
+        if (initialWatchingSpanish !== undefined) {
+          setWatchingSpanish(initialWatchingSpanish);
+        }
+      });
     });
   }, []);
 
@@ -54,7 +61,7 @@ export default function Home() {
   };
 
   return (
-    <div>
+    <div className="h-screen w-full bg-green-200">
       {user ? (
         <div>
           <h1>Welcome {user.displayName}</h1>

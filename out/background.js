@@ -27,37 +27,26 @@ const keywords = [
   "Spanish vlog",
   "Spanish food",
   "Spanish cuisine",
-  "budget eats",
   "learning Spanish",
   "Spanish vocabulary",
   "Spanish culture",
-  "cheap food in Spain",
   "Spanish language practice",
   "spanish teacher",
   "vlog in spanish",
   "vlog in spain",
-  "spain on a budget",
   "spanish supermarket",
-  "food for less than $1",
-  "1 euro",
-  "1 dolar",
   "how to learn spanish",
   "basic spanish phrases",
   "learning spanish",
   "life in spain",
-  "subtitles",
   "english subtitles",
   "study spanish vlog",
   "study spanish abroad",
   "travel vlog spain",
-  "vlog",
   "spanish vlog",
   "barcelona vlog",
-  "barcelona",
   "spanish",
   "speaking spanish for 24 hours",
-  "productive vlog",
-  "language learning",
   "learning Spanish",
   "study Spanish",
   "learn Spanish",
@@ -150,14 +139,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     if (request.message === "sign_in") {
       firebaseAuth().then((auth) => {
-        if (auth) {
-          console.log("User signed in:", auth.user);
-          sendResponse({ success: true, type: "sign_in" });
-        }
+        sendResponse({ success: true, type: "sign_in" });
       });
     } else if (request.message === "sign_out") {
       firebaseSignOut().then(() => {
-        console.log("User signed out");
         sendResponse({ success: true, type: "sign_out" });
       });
     }
@@ -194,7 +179,6 @@ async function saveUserToDatabase(user) {
       total_minutes_synced_with_ds: 0,
       daily_goal: 10,
     });
-    console.log(`User ${userId} saved to database.`);
   } else {
     console.log(`User ${userId} already exists in database.`);
   }
@@ -232,7 +216,6 @@ function checkYouTubeVideo(tabId) {
             if (videoId) {
               fetchVideoDetails(user, videoId)
                 .then((videoDetails) => {
-                  console.log("videoDetails", videoDetails);
                   // If video default language is Spanish, set local storage "watching_spanish" to true
 
                   const lowerCaseTags = videoDetails.tags
@@ -255,12 +238,15 @@ function checkYouTubeVideo(tabId) {
                     isWatchingSpanish ||
                     isTitleInSpanish;
 
-                  chrome.storage.local.set({
-                    watching_spanish: watchingSpanish,
-                  });
+                  // Get the current window ID
+                  chrome.windows.getCurrent((window) => {
+                    const windowId = window.id;
+                    const storageKey = `watchingSpanish-${windowId}`;
 
-                  chrome.runtime.sendMessage({
-                    watchingSpanish: watchingSpanish,
+                    // Store the state in local storage with the window ID
+                    chrome.storage.local.set({
+                      [storageKey]: watchingSpanish,
+                    });
                   });
                 })
                 .catch((error) => {
@@ -268,21 +254,26 @@ function checkYouTubeVideo(tabId) {
                 });
             }
           } else {
-            chrome.storage.local.set({
-              watching_spanish: false,
-            });
+            // Get the current window ID
+            chrome.windows.getCurrent((window) => {
+              const windowId = window.id;
+              const storageKey = `watchingSpanish-${windowId}`;
 
-            chrome.runtime.sendMessage({
-              watchingSpanish: false,
+              // Store the state in local storage with the window ID
+              chrome.storage.local.set({
+                [storageKey]: false,
+              });
             });
           }
         } catch (error) {
-          chrome.storage.local.set({
-            watching_spanish: false,
-          });
+          chrome.windows.getCurrent((window) => {
+            const windowId = window.id;
+            const storageKey = `watchingSpanish-${windowId}`;
 
-          chrome.runtime.sendMessage({
-            watchingSpanish: false,
+            // Store the state in local storage with the window ID
+            chrome.storage.local.set({
+              [storageKey]: false,
+            });
           });
         }
       });
@@ -295,11 +286,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete") {
     checkYouTubeVideo(tabId);
   }
+  return false;
 });
 
 // Listen for tab activation
 chrome.tabs.onActivated.addListener((activeInfo) => {
   checkYouTubeVideo(activeInfo.tabId);
+  return false;
 });
 
 // Listen for extension installation or startup
@@ -309,6 +302,7 @@ chrome.runtime.onInstalled.addListener(() => {
       checkYouTubeVideo(tabs[0].id);
     }
   });
+  return false;
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -317,18 +311,19 @@ chrome.runtime.onStartup.addListener(() => {
       checkYouTubeVideo(tabs[0].id);
     }
   });
+  return false;
 });
 
 // Listen for popup opening
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === "POPUP_OPENED") {
-    console.log("Popup opened");
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0) {
         checkYouTubeVideo(tabs[0].id);
       }
     });
   }
+  return false;
 });
 
 // Listen for changes in local storage (e.g., user sign-in)
@@ -340,49 +335,43 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
       }
     });
   }
+  return false;
 });
 
 // When you hear messages from the content script to increment the time
+// Example listener for the WATCHED_ONE_MINUTE message
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "WATCHED_ONE_MINUTE") {
-    chrome.storage.local.get(["user", "watching_spanish"], (result) => {
-      console.log("result", result);
-      const user = result.user;
-      const watchingSpanish = result.watching_spanish;
+    chrome.windows.getCurrent((window) => {
+      const windowId = window.id;
+      const storageKey = `watchingSpanish-${windowId}`;
+      chrome.storage.local.get(["user", storageKey], (result) => {
+        const user = result.user;
+        const watchingSpanish = result[storageKey];
 
-      if (user && watchingSpanish) {
-        console.log("Updating watched minutes");
-        const userId = user.uid;
-        const dbRef = ref(database, `Users/${userId}/watched_info`);
-        const today = new Date()
-          .toLocaleDateString()
-          .replace(/\./g, "-")
-          .replace(/\//g, "-")
-          .replace(/\[/g, "-")
-          .replace(/\]/g, "-");
+        if (user && watchingSpanish) {
+          const userId = user.uid;
+          const dbRef = ref(database, `Users/${userId}/watched_info`);
+          const today = new Date()
+            .toLocaleDateString()
+            .replace(/\./g, "-")
+            .replace(/\//g, "-")
+            .replace(/\[/g, "-")
+            .replace(/\]/g, "-");
 
-        get(child(dbRef, today))
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              const currentMinutes = snapshot.val();
-              set(child(dbRef, today), currentMinutes + 1);
-            } else {
-              set(child(dbRef, today), 1);
-            }
-            sendResponse({ success: true });
-          })
-          .catch((error) => {
-            console.error("Error updating watched minutes:", error);
-            sendResponse({ success: false, error: error.message });
-          });
-      } else {
-        sendResponse({
-          success: false,
-          error: "User not signed in or not watching Spanish content",
-        });
-      }
+          get(child(dbRef, today))
+            .then((snapshot) => {
+              const currentMinutes = snapshot.exists() ? snapshot.val() : 0;
+              return set(child(dbRef, today), currentMinutes + 1);
+            })
+            .catch((error) => {
+              console.log("Error updating watched time:", error);
+            });
+        }
+      });
     });
   }
+  return false;
 });
 
 // Configure side panel behavior
