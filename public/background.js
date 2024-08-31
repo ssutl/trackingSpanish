@@ -374,6 +374,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return false;
 });
 
+// Listen to call to update users daily goal
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === "UPDATE_DAILY_GOAL") {
+    chrome.storage.local.get("user", (result) => {
+      const user = result.user;
+      if (user) {
+        const userId = user.uid;
+        const dbRef = ref(database, `Users/${userId}`);
+        set(child(dbRef, "daily_goal"), request.dailyGoal)
+          .then(() => {
+            console.log("Daily goal updated successfully");
+          })
+          .catch((error) => {
+            console.error("Error updating daily goal:", error);
+          });
+      }
+    });
+  }
+  return false;
+});
+
 // Configure side panel behavior
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
