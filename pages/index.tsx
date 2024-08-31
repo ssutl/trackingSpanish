@@ -61,7 +61,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-full bg-green-200">
+    <div className="h-screen w-full bg-slate-600">
       {user ? (
         <div>
           <h1>Welcome {user.displayName}</h1>
