@@ -91,7 +91,15 @@ export default function Home() {
 
   const Navbar = () => (
     <div className="w-full flex justify-center items-center px-10 h-16 border-b border-white border-opacity-5 text-white">
-      <h1 className="text-xl font-medium font-sans">Tracking Spanish</h1>
+      {user ? (
+        <>
+          <div className="rounded-full bg-secondary w-10 h-10 flex items-center justify-center mr-auto">
+            <img src={user.photoURL} className="w-8 h-8 rounded-full" />
+          </div>
+        </>
+      ) : (
+        <h1 className="text-xl font-medium">Tracking Spanish</h1>
+      )}
     </div>
   );
 
