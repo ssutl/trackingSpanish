@@ -112,24 +112,84 @@ export default function Home() {
       (minutesWatchedToday / userData.daily_goal) * 100,
       100
     );
+    //calculate the total watched minutes
+    let totalWatched = 0;
+    for (const key in userData.watched_info) {
+      totalWatched += userData.watched_info[key];
+    }
+
+    // Helper function to format minutes into hours and minutes
+    const formatTime = (minutes: number) => {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return hours > 0
+        ? `${hours}h ${remainingMinutes}m`
+        : `${remainingMinutes} minutes`;
+    };
+
+    // Calculate the current streak of consecutive days watched
+    const calculateStreak = (watchedInfo: { [date: string]: number }) => {
+      const dates = Object.keys(watchedInfo).sort();
+      let streak = 0;
+      let currentStreak = 0;
+      let previousDate: Date | null = null;
+
+      dates.forEach((date) => {
+        const currentDate = new Date(date);
+        if (previousDate) {
+          const diffTime = Math.abs(
+            currentDate.getTime() - previousDate.getTime()
+          );
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            currentStreak += 1;
+          } else {
+            currentStreak = 1;
+          }
+        } else {
+          currentStreak = 1;
+        }
+        streak = Math.max(streak, currentStreak);
+        previousDate = currentDate;
+      });
+
+      return Math.min(streak, 7); // Cap the streak at 7
+    };
+
+    const currentStreak = calculateStreak(userData.watched_info);
 
     return (
       <div className="w-full">
-        <h2 className="text-xl mt-5 text-white font-medium">Daily Progress</h2>
-        <h3 className="text-lg mt-2 text-white font-medium">
+        <h2 className="text-xl mt-5 text-orange-400 font-medium">
+          Daily Progress
+        </h2>
+        <h3 className="text-lg mt-3 text-white font-normal">
           {minutesWatchedToday} minutes
         </h3>
-        <p className="text-base mt-1 text-white font-normal opacity-30">
+        <p className="text-base mt-0 text-white font-normal opacity-30">
           out of {userData.daily_goal} minutes goal
         </p>
-        <div className="w-full rounded-2xl bg-secondary h-5 mt-1 overflow-hidden">
+        <div className="w-full rounded-2xl bg-secondary h-5 mt-2 overflow-hidden">
           <div
             style={{
               width: `${progressPercentage}%`,
+              transition: "width 1s ease-in-out",
             }}
             className="h-full bg-white"
           ></div>
         </div>
+        <h2 className="text-xl mt-10 text-orange-400 font-medium">
+          Total Watched
+        </h2>
+        <h1 className="text-5xl mt-3 text-white font-bold">
+          {formatTime(totalWatched)}
+        </h1>
+        <h2 className="text-xl mt-10 text-orange-400 font-medium">
+          Current Streak
+        </h2>
+        <h3 className="text-lg mt-3 text-white font-normal">
+          {currentStreak} days
+        </h3>
       </div>
     );
   };
