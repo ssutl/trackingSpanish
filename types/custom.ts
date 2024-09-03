@@ -16,3 +16,12 @@ interface GoogleUser {
   };
   uid: string;
 }
+
+interface UserData {
+  daily_goal: number;
+  name: string;
+  total_minutes_synced_with_ds: number;
+  watched_info: {
+    [date: string]: number;
+  };
+}

@@ -13,7 +13,7 @@
   "permissions": ["offscreen", "sidePanel", "storage", "tabs", "activeTab"],
   "web_accessible_resources": [
     {
-      "resources": ["index.html", "offscreen.html"],
+      "resources": ["index.html", "offscreen.html", "images/*"],
       "matches": ["<all_urls>"]
     }
   ],

@@ -13,6 +13,33 @@ function obfuscateFile(filePath) {
   fs.writeFileSync(filePath, obfuscatedContent, "utf-8");
 }
 
+// Function to copy a folder recursively
+function copyFolderSync(source, target) {
+  if (!fs.existsSync(target)) {
+    fs.mkdirSync(target, { recursive: true });
+  }
+
+  const items = fs.readdirSync(source);
+
+  items.forEach((item) => {
+    const sourcePath = path.join(source, item);
+    const targetPath = path.join(target, item);
+
+    if (fs.lstatSync(sourcePath).isDirectory()) {
+      copyFolderSync(sourcePath, targetPath);
+    } else {
+      fs.copyFileSync(sourcePath, targetPath);
+    }
+  });
+}
+
+// Define source and destination directories
+const sourceDir = path.join(__dirname, "public", "images");
+const destDir = path.join(__dirname, "dist", "images");
+
+// Copy the image folder
+copyFolderSync(sourceDir, destDir);
+
 // Copy background.js from public directory to out directory
 const backgroundSource = path.join(__dirname, "public", "background.js");
 const backgroundDestination = path.join(__dirname, "out", "background.js");

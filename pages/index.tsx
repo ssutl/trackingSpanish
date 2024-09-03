@@ -1,9 +1,25 @@
 import React, { useEffect } from "react";
 import { FiChrome } from "react-icons/fi";
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, onValue, set } from "firebase/database";
+import { getAuth } from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
+  databaseURL:
+    "https://trackingspanish-default-rtdb.europe-west1.firebasedatabase.app",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 export default function Home() {
   const [user, setUser] = React.useState<GoogleUser>(null);
   const [watchingSpanish, setWatchingSpanish] = React.useState<boolean>(false);
+  const [currentPage, setCurrentPage] = React.useState<
+    "Stats" | "Levels" | "Settings"
+  >("Stats");
+  const [userData, setUserData] = React.useState<UserData | null>(null);
 
   useEffect(() => {
     getUserFromStorage();
@@ -32,6 +48,18 @@ export default function Home() {
       });
     });
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      const userId = user.uid;
+      const userRef = ref(db, `Users/${userId}`);
+
+      onValue(userRef, (snapshot) => {
+        const data = snapshot.val();
+        setUserData(data);
+      });
+    }
+  }, [user]);
 
   const getUserFromStorage = () => {
     chrome.storage.local.get(["user"], (result) => {
@@ -63,37 +91,62 @@ export default function Home() {
 
   const Navbar = () => (
     <div className="w-full flex justify-center items-center px-10 h-16 border-b border-white border-opacity-5 text-white">
-      <h1 className="text-xl font-medium">Tracking Spanish</h1>
+      <h1 className="text-xl font-medium font-sans">Tracking Spanish</h1>
     </div>
   );
 
   const Footer = () =>
     user && (
-      <div className="w-full flex text-white border-t px-10 h-16 border-white border-opacity-5 ">
-        <h1>es it need something Do</h1>
+      <div className="w-full flex text-white border-t px-10 h-16 border-white border-opacity-5 "></div>
+    );
+
+  const StatsPage = () => {
+    const today = new Date()
+      .toLocaleDateString()
+      .replace(/\./g, "-")
+      .replace(/\//g, "-")
+      .replace(/\[/g, "-")
+      .replace(/\]/g, "-");
+    const minutesWatchedToday = userData.watched_info[today] || 0;
+    const progressPercentage = Math.min(
+      (minutesWatchedToday / userData.daily_goal) * 100,
+      100
+    );
+
+    return (
+      <div className="w-full">
+        <h2 className="text-xl mt-5 text-white font-medium">Daily Progress</h2>
+        <h3 className="text-lg mt-2 text-white font-medium">
+          {minutesWatchedToday} minutes
+        </h3>
+        <p className="text-base mt-1 text-white font-normal opacity-30">
+          out of {userData.daily_goal} minutes goal
+        </p>
+        <div className="w-full rounded-2xl bg-secondary h-5 mt-1 overflow-hidden">
+          <div
+            style={{
+              width: `${progressPercentage}%`,
+            }}
+            className="h-full bg-white"
+          ></div>
+        </div>
       </div>
     );
+  };
 
   const Body = () => {
     return (
-      <div className="flex-grow w-full px-10">
+      <div className="flex-grow w-full px-10 flex flex-col items-center ">
         {user ? (
-          <button
-            onClick={handleSignOut}
-            className="bg-secondary px-4 py-2 rounded-md w-full border border-white border-opacity-5 text-white flex justify-center"
-          >
-            Sign out
-          </button>
+          <>{currentPage === "Stats" && userData && <StatsPage />}</>
         ) : (
+          // Login page
           <>
-            <h1 className="text-xl font-medium text-white">
-              Continue your journey to Spanish fluency
-            </h1>
             <button
               onClick={handleSignIn}
               className="bg-secondary px-4 py-2 rounded-md w-full border border-white border-opacity-5 text-white flex justify-center"
             >
-              <div className="flex items-center text-lg">
+              <div className="flex items-center text-lg font-sans">
                 <FiChrome className="mr-5 text-xl" />
                 Sign in with Google
               </div>
