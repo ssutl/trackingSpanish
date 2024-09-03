@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run prep",
     "prep": "npm run exp && node out.js",
-    "exp": "next build && next export",
+    "exp": "next build",
     "run": "next start",
     "dev": "next dev",
     "lint": "next lint"
@@ -21,7 +21,8 @@
     "glob": "^10.2.3",
     "next": "^13.4.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.3.0"
   },
   "devDependencies": {
     "@types/node": "22.4.1",
