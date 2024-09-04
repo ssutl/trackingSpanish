@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { FiChrome } from "react-icons/fi";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { LiaFireAltSolid } from "react-icons/lia";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -193,11 +193,25 @@ export default function Home() {
           {formatTime(totalWatched)}
         </h1>
         <h2 className="text-xl mt-10 text-orange-400 font-medium">
-          Current Streak
+          Days Practiced
         </h2>
-        <h3 className="text-lg mt-3 text-white font-normal">
-          {currentStreak} days
-        </h3>
+        <div className="flex w-full items-center">
+          <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center mt-3">
+            <LiaFireAltSolid className="text-white text-4xl " />
+          </div>
+          <div className="ml-4">
+            <h3 className="text-lg mt-3 text-white font-normal">
+              {currentStreak}
+              {` day${currentStreak > 1 ? "s" : ""}`}
+            </h3>
+            <p className="text-base mt-0 text-white font-normal opacity-30">
+              out of a maximum of 7 days
+            </p>
+          </div>
+          <h2 className="text-xl mt-10 text-orange-400 font-medium">
+            Day Calendar
+          </h2>
+        </div>
       </div>
     );
   };

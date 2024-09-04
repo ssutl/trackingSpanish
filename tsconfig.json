@@ -1,10 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -18,12 +14,14 @@
     "isolatedModules": true,
     "jsx": "preserve"
   },
+  "paths": {
+    "@/*": ["./*"]
+  },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "public/fetchVideoData.js"  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "**/*.tsx",
+    "public/fetchVideoData.js"
+  ],
+  "exclude": ["node_modules"]
 }
