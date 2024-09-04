@@ -362,14 +362,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           get(child(dbRef, today))
             .then((snapshot) => {
               const currentMinutes = snapshot.exists() ? snapshot.val() : 0;
+              sendResponse({ success: true });
               return set(child(dbRef, today), currentMinutes + 1);
             })
             .catch((error) => {
               console.log("Error updating watched time:", error);
+              sendResponse({ success: false });
             });
         }
       });
     });
+    return true;
   }
   return false;
 });
@@ -385,12 +388,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         set(child(dbRef, "daily_goal"), request.dailyGoal)
           .then(() => {
             console.log("Daily goal updated successfully");
+            sendResponse({ success: true });
           })
           .catch((error) => {
             console.error("Error updating daily goal:", error);
+            sendResponse({ success: false });
           });
       }
     });
+    return true;
   }
   return false;
 });
