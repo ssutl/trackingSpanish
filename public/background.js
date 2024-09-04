@@ -141,17 +141,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       firebaseAuth().then((auth) => {
         sendResponse({ success: true, type: "sign_in" });
       });
+
+      // Indicate that the response is asynchronous
+      return true;
     } else if (request.message === "sign_out") {
       firebaseSignOut().then(() => {
         sendResponse({ success: true, type: "sign_out" });
       });
+      return true;
     }
   } catch (error) {
     sendResponse({ success: false, error: error.message });
   }
-
-  // Indicate that the response is asynchronous
-  return true;
 });
 
 // Check if a user exists in the database
@@ -286,12 +287,14 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete") {
     checkYouTubeVideo(tabId);
   }
+  //Not async since we don't need to wait for the promise to resolve
   return false;
 });
 
 // Listen for tab activation
 chrome.tabs.onActivated.addListener((activeInfo) => {
   checkYouTubeVideo(activeInfo.tabId);
+  //Not async since we don't need to wait for the promise to resolve
   return false;
 });
 
@@ -302,6 +305,7 @@ chrome.runtime.onInstalled.addListener(() => {
       checkYouTubeVideo(tabs[0].id);
     }
   });
+  //Not async since we don't need to wait for the promise to resolve
   return false;
 });
 
@@ -311,6 +315,7 @@ chrome.runtime.onStartup.addListener(() => {
       checkYouTubeVideo(tabs[0].id);
     }
   });
+  //Not async since we don't need to wait for the promise to resolve
   return false;
 });
 
@@ -323,6 +328,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     });
   }
+  //Not async since we don't need to wait for the promise to resolve
   return false;
 });
 
@@ -335,11 +341,11 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
       }
     });
   }
+  //Not async since we don't need to wait for the promise to resolve
   return false;
 });
 
-// When you hear messages from the content script to increment the time
-// Example listener for the WATCHED_ONE_MINUTE message
+// We dont need to wait for the promise to resolve so doesnt need to be async
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "WATCHED_ONE_MINUTE") {
     chrome.windows.getCurrent((window) => {
@@ -362,22 +368,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           get(child(dbRef, today))
             .then((snapshot) => {
               const currentMinutes = snapshot.exists() ? snapshot.val() : 0;
-              sendResponse({ success: true });
               return set(child(dbRef, today), currentMinutes + 1);
             })
             .catch((error) => {
               console.log("Error updating watched time:", error);
-              sendResponse({ success: false });
             });
         }
       });
     });
-    return true;
   }
+  //Not async since we don't need to wait for the promise to resolve
   return false;
 });
 
-// Listen to call to update users daily goal
+// Don't to send a response so doesn't need to be async
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "UPDATE_DAILY_GOAL") {
     chrome.storage.local.get("user", (result) => {
@@ -388,15 +392,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         set(child(dbRef, "daily_goal"), request.dailyGoal)
           .then(() => {
             console.log("Daily goal updated successfully");
-            sendResponse({ success: true });
           })
           .catch((error) => {
             console.error("Error updating daily goal:", error);
-            sendResponse({ success: false });
           });
       }
     });
-    return true;
   }
   return false;
 });
