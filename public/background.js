@@ -384,20 +384,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Don't to send a response so doesn't need to be async
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "UPDATE_DAILY_GOAL") {
+    console.log("Updating daily goal");
     chrome.storage.local.get("user", (result) => {
       const user = result.user;
       if (user) {
         const userId = user.uid;
-        const dbRef = ref(database, `Users/${userId}`);
-        set(child(dbRef, "daily_goal"), request.dailyGoal)
+        const dbRef = ref(database, `Users/${userId}/daily_goal`);
+        set(dbRef, request.dailyGoal)
           .then(() => {
             console.log("Daily goal updated successfully");
+            sendResponse({ success: true });
           })
           .catch((error) => {
             console.error("Error updating daily goal:", error);
+            sendResponse({ success: false });
           });
+      } else {
+        sendResponse({ success: false });
       }
     });
+    return true; // Indicates async response
   }
   return false;
 });

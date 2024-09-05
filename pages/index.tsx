@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { FiChrome } from "react-icons/fi";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
@@ -9,7 +9,6 @@ import { PiSignOut } from "react-icons/pi";
 import { IoStatsChart } from "react-icons/io5";
 import { GiProgression } from "react-icons/gi";
 import { PiExportFill } from "react-icons/pi";
-import { Pi } from "lucide-react";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -62,6 +61,9 @@ export default function Home() {
   >("Stats");
   const [userData, setUserData] = React.useState<UserData | null>(null);
   const [editingGoal, setEditingGoal] = React.useState<boolean>(false);
+  const [newDailyGoal, setNewDailyGoal] = React.useState<number>(
+    userData ? userData.daily_goal : 10
+  );
 
   useEffect(() => {
     getUserFromStorage();
@@ -128,6 +130,23 @@ export default function Home() {
 
     if (res.success) {
       setUser(null);
+    }
+  };
+
+  const handleDailyGoal = async () => {
+    if (newDailyGoal > 0) {
+      const res = await chrome.runtime.sendMessage({
+        type: "UPDATE_DAILY_GOAL",
+        dailyGoal: newDailyGoal,
+      });
+
+      if (res.success) {
+        setEditingGoal(false);
+      } else {
+        alert("Error updating daily goal");
+      }
+    } else {
+      alert("Please enter a valid goal");
     }
   };
 
@@ -256,21 +275,58 @@ export default function Home() {
               Edit Goal
             </button>
           </div>
-          <h3 className="text-lg mt-3 text-white font-normal">
-            {minutesWatchedToday} minutes
-          </h3>
-          <p className="text-base mt-0 text-white font-normal opacity-30">
-            out of {userData.daily_goal} minutes goal
-          </p>
-          <div className="w-full rounded-2xl bg-secondary h-5 mt-2 overflow-hidden">
-            <div
-              style={{
-                transform: `translateX(-${100 - (progressPercentage || 0)}%)`,
-                transition: "transform 3s ease-in-out",
-              }}
-              className="h-full bg-white"
-            ></div>
-          </div>
+          {editingGoal ? (
+            <div className="flex items-center mt-5">
+              <input
+                type="number"
+                placeholder={userData.daily_goal.toString()}
+                className="text-white border-opacity-5 border bg-transparent border-white rounded-md p-2 w-20 mr-4 hover:bg-secondary"
+                onChange={(e) => {
+                  setNewDailyGoal(parseInt(e.target.value));
+                }}
+                value={newDailyGoal}
+                defaultValue={newDailyGoal}
+                autoFocus
+              />
+              <p className="text-base text-white font-normal mr-4 bg-opacity-20">
+                min/day
+              </p>
+              <button
+                type="submit"
+                className={`py-2 px-4 border border-white border-opacity-5 rounded-md text-white ${
+                  newDailyGoal > 0 &&
+                  newDailyGoal !== userData.daily_goal &&
+                  "bg-orange-400 cursor-pointer"
+                }`}
+                onClick={handleDailyGoal}
+                disabled={
+                  !(newDailyGoal > 0 && newDailyGoal !== userData.daily_goal)
+                }
+              >
+                Update
+              </button>
+            </div>
+          ) : (
+            <>
+              <h3 className="text-lg mt-3 text-white font-normal">
+                {minutesWatchedToday} minutes
+              </h3>
+              <p className="text-base mt-0 text-white font-normal opacity-30">
+                out of {userData.daily_goal} minutes goal
+              </p>
+              <div className="w-full rounded-2xl bg-secondary h-5 mt-2 overflow-hidden">
+                <div
+                  style={{
+                    transform: `translateX(-${
+                      100 - (progressPercentage || 0)
+                    }%)`,
+                    transition: "transform 3s ease-in-out",
+                  }}
+                  className="h-full bg-white"
+                ></div>
+              </div>
+            </>
+          )}
         </div>
         <div>
           <h2 className="text-xl text-orange-400 font-medium">Total Watched</h2>
@@ -386,6 +442,9 @@ export default function Home() {
                 <h3 className="text-lg mt-3 text-white font-normal">
                   {level.description}
                 </h3>
+                <p className="text-base mt-3 text-white font-normal">
+                  {`Hours of input: ${level.hours_of_input}`}
+                </p>
                 {percentage < 100 && (
                   <p className="text-base mt-3 text-white font-normal opacity-30">
                     {`You'll reach this level in ${daysToReach} days based on your current daily goal`}
@@ -441,7 +500,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen w-full bg-primary overflow-y-hidden">
       <Navbar />
-      <Body />
+      {Body()}
       <Footer />
     </div>
   );
