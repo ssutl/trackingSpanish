@@ -212,15 +212,15 @@ export default function Home() {
           </div>
         </div>
         <h2 className="text-xl mt-10 text-orange-400 font-medium">
-          Day Calendar
+          Your Activity
         </h2>
         <Calendar
           mode="single"
           className="rounded-md text-white w-full mt-3"
           components={{
             Day: (props: CustomDayCellProps) => <CustomDayCell {...props} />,
-            // etc
           }}
+          selected={new Date()}
         />
       </div>
     );
