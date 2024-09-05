@@ -169,59 +169,70 @@ export default function Home() {
     const currentStreak = calculateStreak(userData.watched_info);
 
     return (
-      <div className="w-full">
-        <h2 className="text-xl mt-5 text-orange-400 font-medium">
-          Daily Progress
-        </h2>
-        <h3 className="text-lg mt-3 text-white font-normal">
-          {minutesWatchedToday} minutes
-        </h3>
-        <p className="text-base mt-0 text-white font-normal opacity-30">
-          out of {userData.daily_goal} minutes goal
-        </p>
-        <div className="w-full rounded-2xl bg-secondary h-5 mt-2 overflow-hidden">
-          <div
-            style={{
-              width: `${progressPercentage}%`,
-              transition: "width 1s ease-in-out",
+      <div className="w-full grid py-5 gap-y-10">
+        <div>
+          <h2 className="text-xl text-orange-400 font-medium">
+            Daily Progress
+          </h2>
+          <h3 className="text-lg mt-3 text-white font-normal">
+            {minutesWatchedToday} minutes
+          </h3>
+          <p className="text-base mt-0 text-white font-normal opacity-30">
+            out of {userData.daily_goal} minutes goal
+          </p>
+          <div className="w-full rounded-2xl bg-secondary h-5 mt-2 overflow-hidden">
+            <div
+              style={{
+                width: `${progressPercentage}%`,
+                transition: "width 1s ease-in-out",
+              }}
+              className="h-full bg-white"
+            ></div>
+          </div>
+        </div>
+        <div>
+          <h2 className="text-xl text-orange-400 font-medium">Total Watched</h2>
+          <h1 className="text-5xl mt-3 text-white font-bold">
+            {formatTime(totalWatched)}
+          </h1>
+        </div>
+        <div>
+          <h2 className="text-xl text-orange-400 font-medium">
+            Days Practiced
+          </h2>
+          <div className="flex w-full items-center mt-3">
+            <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center ">
+              <LiaFireAltSolid className="text-white text-4xl " />
+            </div>
+            <div className="ml-4">
+              <h3 className="text-lg mt-3 text-white font-normal">
+                {currentStreak}
+                {` day${currentStreak > 1 ? "s" : ""}`}
+              </h3>
+              <p className="text-base mt-0 text-white font-normal opacity-30">
+                out of a maximum of 7 days
+              </p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 className="text-xl text-orange-400 font-medium">Your Activity</h2>
+          <Calendar
+            mode="single"
+            className="rounded-md text-white w-full mt-3 border border-white border-opacity-5 flex"
+            classNames={{
+              months:
+                "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",
+              month: "space-y-4 w-full flex flex-col",
+              table: "w-full h-full border-collapse space-y-1",
+              head_row: "",
+              row: "w-full mt-2",
             }}
-            className="h-full bg-white"
-          ></div>
+            components={{
+              Day: (props: CustomDayCellProps) => <CustomDayCell {...props} />,
+            }}
+          />
         </div>
-        <h2 className="text-xl mt-10 text-orange-400 font-medium">
-          Total Watched
-        </h2>
-        <h1 className="text-5xl mt-3 text-white font-bold">
-          {formatTime(totalWatched)}
-        </h1>
-        <h2 className="text-xl mt-10 text-orange-400 font-medium">
-          Days Practiced
-        </h2>
-        <div className="flex w-full items-center mt-3">
-          <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center ">
-            <LiaFireAltSolid className="text-white text-4xl " />
-          </div>
-          <div className="ml-4">
-            <h3 className="text-lg mt-3 text-white font-normal">
-              {currentStreak}
-              {` day${currentStreak > 1 ? "s" : ""}`}
-            </h3>
-            <p className="text-base mt-0 text-white font-normal opacity-30">
-              out of a maximum of 7 days
-            </p>
-          </div>
-        </div>
-        <h2 className="text-xl mt-10 text-orange-400 font-medium">
-          Your Activity
-        </h2>
-        <Calendar
-          mode="single"
-          className="rounded-md text-white w-full mt-3"
-          components={{
-            Day: (props: CustomDayCellProps) => <CustomDayCell {...props} />,
-          }}
-          selected={new Date()}
-        />
       </div>
     );
   };
@@ -241,9 +252,9 @@ export default function Home() {
     const minutesWatched = userData.watched_info[dateString] || 0;
 
     return (
-      <div className="w-8 h-12 flex flex-col rounded-md hover:bg-secondary">
+      <div className="flex flex-col rounded-md hover:bg-secondary py-2">
         {/* Fixed-height container */}
-        <div className="flex w-full items-center justify-center h-6">
+        <div className="flex w-full items-center justify-center">
           <div>{new Date(date).getDate()}</div>
         </div>
         <div className="flex w-full items-center justify-center text-xs text-orange-400 h-6">
