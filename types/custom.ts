@@ -25,3 +25,7 @@ interface UserData {
     [date: string]: number;
   };
 }
+interface CustomDayCellProps {
+  displayMonth: Date;
+  date: Date;
+}

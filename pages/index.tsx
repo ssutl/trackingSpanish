@@ -3,6 +3,8 @@ import { FiChrome } from "react-icons/fi";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
 import { LiaFireAltSolid } from "react-icons/lia";
+import { Calendar } from "@/components/ui/calendar";
+import { Day } from "date-fns";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -195,8 +197,8 @@ export default function Home() {
         <h2 className="text-xl mt-10 text-orange-400 font-medium">
           Days Practiced
         </h2>
-        <div className="flex w-full items-center">
-          <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center mt-3">
+        <div className="flex w-full items-center mt-3">
+          <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center ">
             <LiaFireAltSolid className="text-white text-4xl " />
           </div>
           <div className="ml-4">
@@ -208,9 +210,44 @@ export default function Home() {
               out of a maximum of 7 days
             </p>
           </div>
-          <h2 className="text-xl mt-10 text-orange-400 font-medium">
-            Day Calendar
-          </h2>
+        </div>
+        <h2 className="text-xl mt-10 text-orange-400 font-medium">
+          Day Calendar
+        </h2>
+        <Calendar
+          mode="single"
+          className="rounded-md text-white w-full mt-3"
+          components={{
+            Day: (props: CustomDayCellProps) => <CustomDayCell {...props} />,
+            // etc
+          }}
+        />
+      </div>
+    );
+  };
+
+  // Custom day cell component
+  const CustomDayCell: React.FC<CustomDayCellProps> = ({
+    displayMonth,
+    date,
+  }) => {
+    const dateString = new Date(date)
+      .toLocaleDateString()
+      .replace(/\./g, "-")
+      .replace(/\//g, "-")
+      .replace(/\[/g, "-")
+      .replace(/\]/g, "-");
+
+    const minutesWatched = userData.watched_info[dateString] || 0;
+
+    return (
+      <div className="w-8 h-12 flex flex-col rounded-md hover:bg-secondary">
+        {/* Fixed-height container */}
+        <div className="flex w-full items-center justify-center h-6">
+          <div>{new Date(date).getDate()}</div>
+        </div>
+        <div className="flex w-full items-center justify-center text-xs text-orange-400 h-6">
+          {minutesWatched > 0 && `${minutesWatched}m`}
         </div>
       </div>
     );
@@ -218,7 +255,7 @@ export default function Home() {
 
   const Body = () => {
     return (
-      <div className="flex-grow w-full px-10 flex flex-col items-center ">
+      <div className="flex-grow w-full px-10 flex flex-col items-center overflow-y-scroll no-scrollbar">
         {user ? (
           <>{currentPage === "Stats" && userData && <StatsPage />}</>
         ) : (
