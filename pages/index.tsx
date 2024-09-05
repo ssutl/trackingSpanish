@@ -138,32 +138,28 @@ export default function Home() {
     };
 
     // Calculate the current streak of consecutive days watched
-    const calculateStreak = (watchedInfo: { [date: string]: number }) => {
-      const dates = Object.keys(watchedInfo).sort();
+    const calculateStreak = (watchedInfo) => {
       let streak = 0;
-      let currentStreak = 0;
-      let previousDate: Date | null = null;
+      let currentDate = new Date();
+      let currentDateString = currentDate
+        .toLocaleDateString()
+        .replace(/\./g, "-")
+        .replace(/\//g, "-")
+        .replace(/\[/g, "-")
+        .replace(/\]/g, "-");
 
-      dates.forEach((date) => {
-        const currentDate = new Date(date);
-        if (previousDate) {
-          const diffTime = Math.abs(
-            currentDate.getTime() - previousDate.getTime()
-          );
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays === 1) {
-            currentStreak += 1;
-          } else {
-            currentStreak = 1;
-          }
-        } else {
-          currentStreak = 1;
-        }
-        streak = Math.max(streak, currentStreak);
-        previousDate = currentDate;
-      });
-
-      return Math.min(streak, 7); // Cap the streak at 7
+      while (watchedInfo[currentDateString] > 0) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+        currentDateString = currentDate
+          .toLocaleDateString()
+          .replace(/\./g, "-")
+          .replace(/\//g, "-")
+          .replace(/\[/g, "-")
+          .replace(/\]/g, "-");
+      }
+      const finalStreak = Math.min(streak, 7);
+      return finalStreak;
     };
 
     const currentStreak = calculateStreak(userData.watched_info);
