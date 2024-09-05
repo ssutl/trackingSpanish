@@ -4,7 +4,12 @@ import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
 import { LiaFireAltSolid } from "react-icons/lia";
 import { Calendar } from "@/components/ui/calendar";
-import { Day } from "date-fns";
+import { LuPencil } from "react-icons/lu";
+import { PiSignOut } from "react-icons/pi";
+import { IoStatsChart } from "react-icons/io5";
+import { GiProgression } from "react-icons/gi";
+import { PiExportFill } from "react-icons/pi";
+import { Pi } from "lucide-react";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -15,6 +20,40 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+const levels = [
+  {
+    name: "Level 1",
+    description: "Start of your native Spanish journey!",
+    hours_of_input: 0,
+  },
+  {
+    name: "Level 2",
+    description: "Picking up some common words.",
+    hours_of_input: 10,
+  },
+  {
+    name: "level 3",
+    description:
+      "Able to understand main concept of slower videos but not every word.",
+    hours_of_input: 50,
+  },
+  {
+    name: "Level 4",
+    description: "Able to understand main concept of most videos.",
+    hours_of_input: 100,
+  },
+  {
+    name: "Level 5",
+    description: "Able to understand most videos.",
+    hours_of_input: 200,
+  },
+  {
+    name: "Level 6",
+    description: "Able to understand all videos.",
+    hours_of_input: 300,
+  },
+];
+
 export default function Home() {
   const [user, setUser] = React.useState<GoogleUser>(null);
   const [watchingSpanish, setWatchingSpanish] = React.useState<boolean>(false);
@@ -22,6 +61,7 @@ export default function Home() {
     "Stats" | "Levels" | "Settings"
   >("Stats");
   const [userData, setUserData] = React.useState<UserData | null>(null);
+  const [editingGoal, setEditingGoal] = React.useState<boolean>(false);
 
   useEffect(() => {
     getUserFromStorage();
@@ -98,6 +138,12 @@ export default function Home() {
           <div className="rounded-full bg-secondary w-10 h-10 flex items-center justify-center mr-auto">
             <img src={user.photoURL} className="w-8 h-8 rounded-full" />
           </div>
+          <div
+            className=" hover:bg-secondary rounded-md p-1 cursor-pointer"
+            onClick={() => handleSignOut()}
+          >
+            <PiSignOut className="text-white text-xl" />
+          </div>
         </>
       ) : (
         <h1 className="text-xl font-medium">Tracking Spanish</h1>
@@ -107,7 +153,38 @@ export default function Home() {
 
   const Footer = () =>
     user && (
-      <div className="w-full flex text-white border-t px-10 h-16 border-white border-opacity-5 "></div>
+      <div className="w-full flex text-white border-t px-10 h-16 border-white border-opacity-5 ">
+        <button
+          onClick={() => setCurrentPage("Stats")}
+          className={`flex-1 flex items-center justify-center ${
+            currentPage === "Stats"
+              ? "border-t-2 border-orange-400 "
+              : "hover:bg-secondary hover:bg-opacity-10"
+          }`}
+        >
+          <IoStatsChart className="text-xl" />
+        </button>
+        <button
+          onClick={() => setCurrentPage("Levels")}
+          className={`flex-1 flex items-center justify-center ${
+            currentPage === "Levels"
+              ? "border-t-2 border-orange-400"
+              : "hover:bg-secondary hover:bg-opacity-10"
+          }`}
+        >
+          <GiProgression className="text-xl" />
+        </button>
+        <button
+          onClick={() => setCurrentPage("Settings")}
+          className={`flex-1 flex items-center justify-center ${
+            currentPage === "Settings"
+              ? "border-t-2 border-orange-400"
+              : "hover:bg-secondary hover:bg-opacity-10"
+          }`}
+        >
+          <PiExportFill className="text-xl" />
+        </button>
+      </div>
     );
 
   const StatsPage = () => {
@@ -165,11 +242,20 @@ export default function Home() {
     const currentStreak = calculateStreak(userData.watched_info);
 
     return (
-      <div className="w-full grid py-5 gap-y-10">
+      <div className="w-full space-y-10">
         <div>
-          <h2 className="text-xl text-orange-400 font-medium">
-            Daily Progress
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl text-orange-400 font-medium">
+              Daily Progress
+            </h2>
+            <button
+              className="flex text-base items-center text-white"
+              onClick={() => setEditingGoal(!editingGoal)}
+            >
+              <LuPencil className="mr-2" />
+              Edit Goal
+            </button>
+          </div>
           <h3 className="text-lg mt-3 text-white font-normal">
             {minutesWatchedToday} minutes
           </h3>
@@ -179,8 +265,8 @@ export default function Home() {
           <div className="w-full rounded-2xl bg-secondary h-5 mt-2 overflow-hidden">
             <div
               style={{
-                width: `${progressPercentage}%`,
-                transition: "width 1s ease-in-out",
+                transform: `translateX(-${100 - (progressPercentage || 0)}%)`,
+                transition: "transform 3s ease-in-out",
               }}
               className="h-full bg-white"
             ></div>
@@ -260,11 +346,80 @@ export default function Home() {
     );
   };
 
+  const LevelPage = () => {
+    // Calculate the total minutes watched
+    let totalWatched = 0;
+    for (const key in userData.watched_info) {
+      totalWatched += userData.watched_info[key];
+    }
+
+    return (
+      <div className="w-full flex flex-col">
+        <h2 className="text-xl text-orange-400 font-medium">Levels</h2>
+        {levels.map((level, index) => {
+          const requiredMinutes = level.hours_of_input * 60;
+          const percentage = Math.min(
+            (totalWatched / requiredMinutes) * 100,
+            100
+          );
+          const userGoalPerDay = userData.daily_goal;
+          const daysToReach = Math.round(
+            requiredMinutes - totalWatched / userGoalPerDay
+          );
+
+          return (
+            <div
+              key={index}
+              className="w-full relative rounded-md p-5 border border-white border-opacity-5 mt-5 overflow-hidden"
+            >
+              <div
+                className={`absolute top-0 left-0 h-full ${
+                  percentage === 100 ? `bg-orange-400` : `bg-secondary`
+                }`}
+                style={{
+                  width: `${percentage}%`,
+                  transition: "width 0.5s ease-in-out",
+                }}
+              ></div>
+              <div className="relative z-10 text-white">
+                <h1 className="text-5xl text-white font-bold">{level.name}</h1>
+                <h3 className="text-lg mt-3 text-white font-normal">
+                  {level.description}
+                </h3>
+                {percentage < 100 && (
+                  <p className="text-base mt-3 text-white font-normal opacity-30">
+                    {`You'll reach this level in ${daysToReach} days based on your current daily goal`}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const SettingsPage = () => {
+    return (
+      <div className="w-full">
+        <h2 className="text-xl text-orange-400 font-medium">Export Data</h2>
+      </div>
+    );
+  };
+
   const Body = () => {
     return (
-      <div className="flex-grow w-full px-10 flex flex-col items-center overflow-y-scroll no-scrollbar">
+      <div
+        className={`w-full flex px-10 py-5 flex-col overflow-y-scroll no-scrollbar ${
+          user ? "h-[calc(100vh-128px)]" : "h-[calc(100vh-64px)]"
+        }`}
+      >
         {user ? (
-          <>{currentPage === "Stats" && userData && <StatsPage />}</>
+          <>
+            {currentPage === "Stats" && userData && <StatsPage />}
+            {currentPage === "Levels" && <LevelPage />}
+            {currentPage === "Settings" && <SettingsPage />}
+          </>
         ) : (
           // Login page
           <>
