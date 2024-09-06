@@ -10,7 +10,14 @@
     "48": "/icons/icon48.png",
     "192": "/icons/icon192.png"
   },
-  "permissions": ["offscreen", "sidePanel", "storage", "tabs", "activeTab"],
+  "permissions": [
+    "offscreen",
+    "sidePanel",
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
   "web_accessible_resources": [
     {
       "resources": ["index.html", "offscreen.html", "images/*"],
@@ -27,7 +34,7 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": ["https://*/*", "http://*/*"],
   "side_panel": {
     "default_path": "index.html"
   },
