@@ -38,11 +38,7 @@ const keywords = [
   "how to learn spanish",
   "basic spanish phrases",
   "learning spanish",
-  "life in spain",
-  "english subtitles",
   "study spanish vlog",
-  "study spanish abroad",
-  "travel vlog spain",
   "spanish vlog",
   "barcelona vlog",
   "spanish",
@@ -168,6 +164,11 @@ async function saveUserToDatabase(user) {
   if (!(await userExists(userId))) {
     await set(ref(database, `Users/${userId}`), {
       name: user.displayName || null,
+      created_at: new Date().toISOString(),
+      dialects_watched_info: {
+        "es-MX": 0,
+        es: 0,
+      },
       watched_info: {
         //start with todays date and 0 minutes watched only need day month year cannot contain ".", "#", "$", "/", "[", or "]" use - instead
         [new Date()
@@ -217,6 +218,7 @@ function checkYouTubeVideo(tabId) {
             if (videoId) {
               fetchVideoDetails(user, videoId)
                 .then((videoDetails) => {
+                  console.log("videoDetails", videoDetails);
                   // If video default language is Spanish, set local storage "watching_spanish" to true
 
                   const lowerCaseTags = videoDetails.tags
