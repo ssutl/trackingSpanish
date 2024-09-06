@@ -1,6 +1,11 @@
 console.log("Background script loaded");
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js";
 import {
+  getAuth,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/9.6.8/firebase-auth.js";
+
+import {
   getDatabase,
   ref,
   get,
@@ -9,6 +14,32 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.6.8/firebase-database.js";
 import { franc } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
+// Re-insert content scripts on extension reload
+chrome.runtime.onInstalled.addListener(async () => {
+  for (const cs of chrome.runtime.getManifest().content_scripts) {
+    for (const tab of await chrome.tabs.query({ url: cs.matches })) {
+      if (tab.url.match(/(chrome|chrome-extension):\/\//gi)) {
+        continue;
+      }
+      const target = { tabId: tab.id, allFrames: cs.all_frames };
+      if (cs.js && cs.js.length > 0) {
+        chrome.scripting.executeScript({
+          files: cs.js,
+          injectImmediately: cs.run_at === "document_start",
+          world: cs.world, // requires Chrome 111+
+          target,
+        });
+      }
+      if (cs.css && cs.css.length > 0) {
+        chrome.scripting.insertCSS({
+          files: cs.css,
+          origin: cs.origin,
+          target,
+        });
+      }
+    }
+  }
+});
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
   databaseURL:
@@ -17,6 +48,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+const auth = getAuth();
 
 const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 
@@ -84,7 +116,7 @@ async function closeOffscreenDocument() {
 }
 
 // Function to get Firebase authentication
-async function getAuth() {
+async function getAuthPopup() {
   try {
     const auth = await chrome.runtime.sendMessage({
       type: "firebase-auth",
@@ -104,10 +136,13 @@ async function firebaseAuth() {
   try {
     await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
 
-    const auth = await getAuth();
+    const auth = await getAuthPopup();
 
     // Persist user data in chrome.storage.local
-    await chrome.storage.local.set({ user: auth.user });
+    await chrome.storage.local.set({
+      user: auth.user,
+      accessToken: auth._tokenResponse.oauthAccessToken,
+    });
 
     await saveUserToDatabase(auth.user);
     // Notify success
@@ -120,12 +155,51 @@ async function firebaseAuth() {
   }
 }
 
+//This way removes permisions
+// async function firebaseSignOut() {
+//   try {
+//     // First, remove user data from local storage
+//     await chrome.storage.local.remove("user");
+
+//     // Retrieve the OAuth access token
+//     chrome.storage.local.get("accessToken", async ({ accessToken }) => {
+//       if (accessToken) {
+//         try {
+//           // Revoke the OAuth token
+//           const revokeUrl = `https://accounts.google.com/o/oauth2/revoke?token=${accessToken}`;
+//           await fetch(revokeUrl);
+//           console.log("Token revoked successfully");
+
+//           // Remove the cached token
+//           // chrome.identity.removeCachedAuthToken({ token: accessToken });
+//         } catch (error) {
+//           console.error("Error revoking token:", error);
+//         }
+//       } else {
+//         console.warn("No access token found in local storage");
+//       }
+//     });
+
+//     return true; // Sign-out was initiated
+//   } catch (error) {
+//     console.error("Sign-out error:", error.message);
+//     throw error;
+//   }
+// }
+
 async function firebaseSignOut() {
   try {
+    const res = await signOut(auth);
+    console.log("res", res);
+
+    console.log("User signed out successfully");
+
+    // Optionally, you can remove any locally stored data
     await chrome.storage.local.remove("user");
+
     return true;
   } catch (error) {
-    console.error("Sign out error:", error.message);
+    console.error("Sign-out error:", error.message);
     throw error;
   }
 }
@@ -137,7 +211,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       firebaseAuth().then((auth) => {
         sendResponse({ success: true, type: "sign_in" });
       });
-
       // Indicate that the response is asynchronous
       return true;
     } else if (request.message === "sign_out") {
