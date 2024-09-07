@@ -238,6 +238,7 @@ async function saveUserToDatabase(user) {
     await set(ref(database, `Users/${userId}`), {
       name: user.displayName || null,
       created_at: new Date().toISOString(),
+      sync_with_ds: false,
       dialects_watched_info: {
         "es-MX": 0,
         es: 0,
