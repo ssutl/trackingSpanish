@@ -249,9 +249,11 @@ async function saveUserToDatabase(user) {
           .replace(/\./g, "-")
           .replace(/\//g, "-")
           .replace(/\[/g, "-")
-          .replace(/\]/g, "-")]: 0,
+          .replace(/\]/g, "-")]: {
+          synced_with_ds: false,
+          minutes_watched: 0,
+        },
       }, // Initialize as empty object
-      total_minutes_synced_with_ds: 0,
       daily_goal: 10,
     });
   } else {
@@ -440,10 +442,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .replace(/\[/g, "-")
             .replace(/\]/g, "-");
 
-          get(child(dbRef, today))
+          get(child(dbRef, `${today}/minutes_watched`))
             .then((snapshot) => {
               const currentMinutes = snapshot.exists() ? snapshot.val() : 0;
-              return set(child(dbRef, today), currentMinutes + 1);
+              return set(
+                child(dbRef, `${today}/minutes_watched`),
+                currentMinutes + 1
+              );
             })
             .catch((error) => {
               console.log("Error updating watched time:", error);

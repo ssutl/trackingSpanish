@@ -213,7 +213,11 @@ export default function Home() {
       .replace(/\//g, "-")
       .replace(/\[/g, "-")
       .replace(/\]/g, "-");
-    const minutesWatchedToday = userData.watched_info[today] || 0;
+
+    const minutesWatchedToday =
+      (userData.watched_info[today] &&
+        userData.watched_info[today].minutes_watched) ||
+      0;
     const progressPercentage = Math.min(
       (minutesWatchedToday / userData.daily_goal) * 100,
       100
@@ -221,7 +225,7 @@ export default function Home() {
     //calculate the total watched minutes
     let totalWatched = 0;
     for (const key in userData.watched_info) {
-      totalWatched += userData.watched_info[key];
+      totalWatched += userData.watched_info[key].minutes_watched;
     }
 
     // Helper function to format minutes into hours and minutes
@@ -387,7 +391,10 @@ export default function Home() {
       .replace(/\[/g, "-")
       .replace(/\]/g, "-");
 
-    const minutesWatched = userData.watched_info[dateString] || 0;
+    const minutesWatched =
+      (userData.watched_info[dateString] &&
+        userData.watched_info[dateString].minutes_watched) ||
+      0;
 
     return (
       <div className="flex flex-col rounded-md hover:bg-secondary py-2">
@@ -406,7 +413,7 @@ export default function Home() {
     // Calculate the total minutes watched
     let totalWatched = 0;
     for (const key in userData.watched_info) {
-      totalWatched += userData.watched_info[key];
+      totalWatched += userData.watched_info[key].minutes_watched;
     }
 
     return (

@@ -20,9 +20,15 @@ interface GoogleUser {
 interface UserData {
   daily_goal: number;
   name: string;
-  total_minutes_synced_with_ds: number;
+  created_at: string;
+  dialects_watched_info: {
+    [dialect: string]: number;
+  };
   watched_info: {
-    [date: string]: number;
+    [date: string]: {
+      synced_with_ds: boolean;
+      minutes_watched: number;
+    };
   };
 }
 interface CustomDayCellProps {
