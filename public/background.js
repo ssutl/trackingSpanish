@@ -12,7 +12,7 @@ import {
   child,
   set,
 } from "https://www.gstatic.com/firebasejs/9.6.8/firebase-database.js";
-import { franc } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
+import { franc, francAll } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
 // Re-insert content scripts on extension reload
 chrome.runtime.onInstalled.addListener(async () => {
@@ -309,13 +309,25 @@ function checkYouTubeVideo(tabId) {
                     ? videoDetails.defaultAudioLanguage.toLowerCase()
                     : "";
 
-                  const titleLanguage = franc(videoDetails.title);
+                  const titleLanguage = francAll(videoDetails.title, {
+                    only: ["spa"],
+                  })[0][0];
+                  console.log("titleLanguage", titleLanguage);
                   const isTitleInSpanish = titleLanguage === "spa";
+
+                  //check description
+                  const descriptionLanguage = francAll(
+                    videoDetails.description,
+                    { only: ["spa"] }
+                  )[0][0];
+                  console.log("descriptionLanguage", descriptionLanguage);
+                  const isDescriptionInSpanish = descriptionLanguage === "spa";
 
                   const watchingSpanish =
                     defaultAudioLanguage.includes("es") ||
                     isWatchingSpanish ||
-                    isTitleInSpanish;
+                    isTitleInSpanish ||
+                    isDescriptionInSpanish;
 
                   // Get the current window ID
                   chrome.windows.getCurrent((window) => {
