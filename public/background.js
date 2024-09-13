@@ -131,6 +131,36 @@ async function getAuthPopup() {
   }
 }
 
+// Function to update minutes in offscreen
+async function updateMinutes(userId) {
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: "update-minutes",
+      userId,
+    });
+    console.log("res from update minutes", res);
+  } catch (error) {
+    console.error("Error updating minutes:", error);
+    throw error;
+  }
+}
+
+// Function to update daily goal in offscreen
+async function updateDailyGoal(userId, dailyGoal) {
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: "update-daily-goal",
+      userId,
+      dailyGoal,
+    });
+    console.log("res from daily goal", res);
+    return res;
+  } catch (error) {
+    console.error("Error updating daily goal:", error);
+    throw error;
+  }
+}
+
 // Firebase authentication process
 async function firebaseAuth() {
   try {
@@ -144,48 +174,12 @@ async function firebaseAuth() {
       accessToken: auth._tokenResponse.oauthAccessToken,
     });
 
-    await saveUserToDatabase(auth.user);
-    // Notify success
     return auth;
   } catch (error) {
     console.error("Authentication error:", error.message);
     throw error;
-  } finally {
-    await closeOffscreenDocument();
   }
 }
-
-//This way removes permisions
-// async function firebaseSignOut() {
-//   try {
-//     // First, remove user data from local storage
-//     await chrome.storage.local.remove("user");
-
-//     // Retrieve the OAuth access token
-//     chrome.storage.local.get("accessToken", async ({ accessToken }) => {
-//       if (accessToken) {
-//         try {
-//           // Revoke the OAuth token
-//           const revokeUrl = `https://accounts.google.com/o/oauth2/revoke?token=${accessToken}`;
-//           await fetch(revokeUrl);
-//           console.log("Token revoked successfully");
-
-//           // Remove the cached token
-//           // chrome.identity.removeCachedAuthToken({ token: accessToken });
-//         } catch (error) {
-//           console.error("Error revoking token:", error);
-//         }
-//       } else {
-//         console.warn("No access token found in local storage");
-//       }
-//     });
-
-//     return true; // Sign-out was initiated
-//   } catch (error) {
-//     console.error("Sign-out error:", error.message);
-//     throw error;
-//   }
-// }
 
 async function firebaseSignOut() {
   try {
@@ -196,6 +190,9 @@ async function firebaseSignOut() {
 
     // Optionally, you can remove any locally stored data
     await chrome.storage.local.remove("user");
+
+    // Close the offscreen document
+    await closeOffscreenDocument();
 
     return true;
   } catch (error) {
@@ -217,7 +214,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       firebaseSignOut().then(() => {
         sendResponse({ success: true, type: "sign_out" });
       });
+      // Indicate that the response is asynchronous
       return true;
+    } else if (request.type === "WATCHED_ONE_MINUTE") {
+      // Handle watched one minute
+      // Not async since we don't need to wait for the promise to resolve
+      chrome.windows.getCurrent((window) => {
+        const windowId = window.id;
+        const storageKey = `watchingSpanish-${windowId}`;
+        chrome.storage.local.get(["user", storageKey], (result) => {
+          const user = result.user;
+          const watchingSpanish = result[storageKey];
+          if (user && watchingSpanish) {
+            const userId = user.uid;
+            updateMinutes(userId);
+          }
+        });
+      });
+      return false;
+    } else if (request.type === "UPDATE_DAILY_GOAL") {
+      // Is async since we need to wait for the promise to resolve
+      chrome.storage.local.get("user", (result) => {
+        const user = result.user;
+        if (user) {
+          const userId = user.uid;
+          updateDailyGoal(userId, request.dailyGoal)
+            .then((res) => {
+              console.log("res", res);
+              sendResponse({ success: true });
+            })
+            .catch((error) => {
+              console.error("Error updating daily goal:", error);
+              sendResponse({ success: false });
+            });
+        } else {
+          sendResponse({ success: false });
+        }
+      });
+      return true; // Indicates async response
     }
   } catch (error) {
     sendResponse({ success: false, error: error.message });
@@ -225,42 +259,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Check if a user exists in the database
-async function userExists(userId) {
-  const dbRef = ref(database);
-  const snapshot = await get(child(dbRef, `Users/${userId}`));
-  return snapshot.exists();
-}
 
 // Save user to Firebase Realtime Database
-async function saveUserToDatabase(user) {
-  const userId = user.uid;
-  if (!(await userExists(userId))) {
-    await set(ref(database, `Users/${userId}`), {
-      name: user.displayName || null,
-      created_at: new Date().toISOString(),
-      sync_with_ds: false,
-      dialects_watched_info: {
-        "es-MX": 0,
-        es: 0,
-      },
-      watched_info: {
-        //start with todays date and 0 minutes watched only need day month year cannot contain ".", "#", "$", "/", "[", or "]" use - instead
-        [new Date()
-          .toLocaleDateString()
-          .replace(/\./g, "-")
-          .replace(/\//g, "-")
-          .replace(/\[/g, "-")
-          .replace(/\]/g, "-")]: {
-          synced_with_ds: false,
-          minutes_watched: 0,
-        },
-      }, // Initialize as empty object
-      daily_goal: 10,
-    });
-  } else {
-    console.log(`User ${userId} already exists in database.`);
-  }
-}
 
 // Get youtube video details
 async function fetchVideoDetails(user, videoId) {
@@ -432,72 +432,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     });
   }
   //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
-
-// We dont need to wait for the promise to resolve so doesnt need to be async
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "WATCHED_ONE_MINUTE") {
-    chrome.windows.getCurrent((window) => {
-      const windowId = window.id;
-      const storageKey = `watchingSpanish-${windowId}`;
-      chrome.storage.local.get(["user", storageKey], (result) => {
-        const user = result.user;
-        const watchingSpanish = result[storageKey];
-
-        if (user && watchingSpanish) {
-          const userId = user.uid;
-          const dbRef = ref(database, `Users/${userId}/watched_info`);
-          const today = new Date()
-            .toLocaleDateString()
-            .replace(/\./g, "-")
-            .replace(/\//g, "-")
-            .replace(/\[/g, "-")
-            .replace(/\]/g, "-");
-
-          get(child(dbRef, `${today}/minutes_watched`))
-            .then((snapshot) => {
-              const currentMinutes = snapshot.exists() ? snapshot.val() : 0;
-              return set(
-                child(dbRef, `${today}/minutes_watched`),
-                currentMinutes + 1
-              );
-            })
-            .catch((error) => {
-              console.log("Error updating watched time:", error);
-            });
-        }
-      });
-    });
-  }
-  //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
-
-// Don't to send a response so doesn't need to be async
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "UPDATE_DAILY_GOAL") {
-    console.log("Updating daily goal");
-    chrome.storage.local.get("user", (result) => {
-      const user = result.user;
-      if (user) {
-        const userId = user.uid;
-        const dbRef = ref(database, `Users/${userId}/daily_goal`);
-        set(dbRef, request.dailyGoal)
-          .then(() => {
-            console.log("Daily goal updated successfully");
-            sendResponse({ success: true });
-          })
-          .catch((error) => {
-            console.error("Error updating daily goal:", error);
-            sendResponse({ success: false });
-          });
-      } else {
-        sendResponse({ success: false });
-      }
-    });
-    return true; // Indicates async response
-  }
   return false;
 });
 
