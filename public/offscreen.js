@@ -55,6 +55,11 @@ function handleChromeMessages(message, sender, sendResponse) {
       },
       new URL(_URL).origin
     );
+  } else if (message.type === "firebase-signout") {
+    iframe.contentWindow.postMessage(
+      { type: "firebase-signout" },
+      new URL(_URL).origin
+    );
   }
   return true;
 }

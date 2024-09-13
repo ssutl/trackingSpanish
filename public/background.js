@@ -1,9 +1,4 @@
 console.log("Background script loaded");
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js";
-import {
-  getAuth,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/9.6.8/firebase-auth.js";
 
 import { franc, francAll } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
@@ -33,9 +28,6 @@ chrome.runtime.onInstalled.addListener(async () => {
     }
   }
 });
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
 
 const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 
@@ -156,6 +148,7 @@ async function firebaseAuth() {
 
     const res = await getAuthPopup();
     const auth = res.result;
+    console.log("auth", auth);
 
     // Persist user data in chrome.storage.local
     await chrome.storage.local.set({
@@ -172,10 +165,10 @@ async function firebaseAuth() {
 
 async function firebaseSignOut() {
   try {
-    const res = await signOut(auth);
-    console.log("res", res);
-
-    console.log("User signed out successfully");
+    await chrome.runtime.sendMessage({
+      type: "firebase-signout",
+      target: "offscreen",
+    });
 
     // Optionally, you can remove any locally stored data
     await chrome.storage.local.remove("user");

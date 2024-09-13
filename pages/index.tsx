@@ -93,6 +93,7 @@ export default function Home() {
     });
   }, []);
 
+  // USER LOGGED IN STATE ISNT WORKING
   useEffect(() => {
     if (user) {
       const userId = user.uid;
@@ -108,6 +109,7 @@ export default function Home() {
   const getUserFromStorage = () => {
     chrome.storage.local.get(["user"], (result) => {
       const user = result.user as GoogleUser;
+      console.log("user", user);
       if (user) {
         setUser(user);
       } else {
