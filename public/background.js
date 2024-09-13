@@ -5,13 +5,6 @@ import {
   signOut,
 } from "https://www.gstatic.com/firebasejs/9.6.8/firebase-auth.js";
 
-import {
-  getDatabase,
-  ref,
-  get,
-  child,
-  set,
-} from "https://www.gstatic.com/firebasejs/9.6.8/firebase-database.js";
 import { franc, francAll } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
 // Re-insert content scripts on extension reload
@@ -40,14 +33,8 @@ chrome.runtime.onInstalled.addListener(async () => {
     }
   }
 });
-const firebaseConfig = {
-  apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
-  databaseURL:
-    "https://trackingspanish-default-rtdb.europe-west1.firebasedatabase.app",
-};
 
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
 const auth = getAuth();
 
 const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
@@ -136,7 +123,8 @@ async function updateMinutes(userId) {
   try {
     const res = await chrome.runtime.sendMessage({
       type: "update-minutes",
-      userId,
+      target: "offscreen",
+      data: userId,
     });
     console.log("res from update minutes", res);
   } catch (error) {
@@ -150,8 +138,8 @@ async function updateDailyGoal(userId, dailyGoal) {
   try {
     const res = await chrome.runtime.sendMessage({
       type: "update-daily-goal",
-      userId,
-      dailyGoal,
+      target: "offscreen",
+      data: { userId, dailyGoal },
     });
     console.log("res from daily goal", res);
     return res;
@@ -166,7 +154,8 @@ async function firebaseAuth() {
   try {
     await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
 
-    const auth = await getAuthPopup();
+    const res = await getAuthPopup();
+    const auth = res.result;
 
     // Persist user data in chrome.storage.local
     await chrome.storage.local.set({
