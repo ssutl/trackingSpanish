@@ -21,34 +21,27 @@ const db = getDatabase(app);
 
 const levels = [
   {
-    name: "Level 1",
-    description: "Start of your native Spanish journey!",
+    name: "Level 0",
+    description:
+      "You understand a lot of what you hear, but speaking confidently is still difficult.",
     hours_of_input: 0,
   },
   {
-    name: "Level 2",
-    description: "Picking up some common words.",
-    hours_of_input: 10,
-  },
-  {
-    name: "level 3",
+    name: "Level 1",
     description:
-      "Able to understand main concept of slower videos but not every word.",
+      "Your comprehension is improving, and you can follow more everyday conversations, but speaking remains challenging.",
     hours_of_input: 50,
   },
   {
-    name: "Level 4",
-    description: "Able to understand main concept of most videos.",
-    hours_of_input: 100,
+    name: "Level 2",
+    description:
+      "You can follow native conversations with effort, understanding the main ideas, though speaking is still limited.",
+    hours_of_input: 150,
   },
   {
-    name: "Level 5",
-    description: "Able to understand most videos.",
-    hours_of_input: 200,
-  },
-  {
-    name: "Level 6",
-    description: "Able to understand all videos.",
+    name: "Level 3",
+    description:
+      "You can both understand and contribute to conversations, expressing yourself more comfortably with native speakers.",
     hours_of_input: 300,
   },
 ];
