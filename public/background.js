@@ -198,9 +198,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Indicate that the response is asynchronous
       return true;
     } else if (request.type === "WATCHED_ONE_MINUTE") {
-      console.log("SS.UTL Received message to add minute");
       chrome.storage.local.get(["user"], (result) => {
-        console.log("getting user if user is there we add minute", result);
         const user = result.user;
         if (user) {
           const userId = user.uid;
@@ -229,13 +227,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true; // Indicates async response
     } else if (request.type === "isVideoSpanish") {
-      console.log(
-        "SS.UTL Recieved request to check if video is in Spanish from backend",
-        request
-      );
       isVideoInSpanish(request.videoDetails).then((res) => {
         sendResponse({ success: true, isSpanish: res });
-        console.log("SS.UTL res", res);
       });
       return true; // Indicates async response
     }
@@ -265,15 +258,6 @@ async function isVideoInSpanish(videoDetails) {
     isTitleInSpanish ||
     isDescriptionInSpanish ||
     defaultAudioLanguage.includes("es");
-
-  // // Get the current window ID
-  // chrome.windows.getCurrent((window) => {
-  //   const windowId = window.id;
-  //   const storageKey = `watchingSpanish-${windowId}`;
-  //   chrome.storage.local.set({
-  //     [storageKey]: watchingSpanish,
-  //   });
-  // });
 
   return watchingSpanish;
 }

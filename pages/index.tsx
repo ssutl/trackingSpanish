@@ -80,6 +80,7 @@ export default function Home() {
       const user = result.user as GoogleUser;
       if (user) {
         setUser(user);
+      } else {
       }
     });
   };
