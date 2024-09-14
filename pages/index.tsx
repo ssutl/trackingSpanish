@@ -60,30 +60,6 @@ export default function Home() {
 
   useEffect(() => {
     getUserFromStorage();
-
-    chrome.runtime.sendMessage({ message: "POPUP_OPENED" });
-
-    chrome.windows.getCurrent((window) => {
-      const windowId = window.id;
-      const storageKey = `watchingSpanish-${windowId}`;
-
-      // Listen for changes to the specific storage key
-      chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === "local" && changes[storageKey]) {
-          const newValue = changes[storageKey].newValue;
-          console.log(`Storage key ${storageKey} changed to ${newValue}`);
-          setWatchingSpanish(newValue);
-        }
-      });
-
-      // Get the initial value from storage
-      chrome.storage.local.get([storageKey], (result) => {
-        const initialWatchingSpanish = result[storageKey];
-        if (initialWatchingSpanish !== undefined) {
-          setWatchingSpanish(initialWatchingSpanish);
-        }
-      });
-    });
   }, []);
 
   // USER LOGGED IN STATE ISNT WORKING
@@ -102,18 +78,15 @@ export default function Home() {
   const getUserFromStorage = () => {
     chrome.storage.local.get(["user"], (result) => {
       const user = result.user as GoogleUser;
-      console.log("user", user);
       if (user) {
         setUser(user);
-      } else {
-        console.log("User not signed in");
       }
     });
   };
 
   const handleSignIn = async () => {
     // send message to background.js
-    const res = await chrome.runtime.sendMessage({ message: "sign_in" });
+    const res = await chrome.runtime.sendMessage({ type: "sign_in" });
     if (res.success) {
       getUserFromStorage();
     }
@@ -121,7 +94,7 @@ export default function Home() {
 
   const handleSignOut = async () => {
     // send message to background.js
-    const res = await chrome.runtime.sendMessage({ message: "sign_out" });
+    const res = await chrome.runtime.sendMessage({ type: "sign_out" });
 
     if (res.success) {
       setUser(null);

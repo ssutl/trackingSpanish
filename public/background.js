@@ -1,5 +1,4 @@
 console.log("Background script loaded");
-
 import { franc, francAll } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
 // Re-insert content scripts on extension reload
@@ -186,32 +185,27 @@ async function firebaseSignOut() {
 // Handle messages from the extension
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
-    if (request.message === "sign_in") {
+    if (request.type === "sign_in") {
       firebaseAuth().then((auth) => {
         sendResponse({ success: true, type: "sign_in" });
       });
       // Indicate that the response is asynchronous
       return true;
-    } else if (request.message === "sign_out") {
+    } else if (request.type === "sign_out") {
       firebaseSignOut().then(() => {
         sendResponse({ success: true, type: "sign_out" });
       });
       // Indicate that the response is asynchronous
       return true;
     } else if (request.type === "WATCHED_ONE_MINUTE") {
-      // Handle watched one minute
-      // Not async since we don't need to wait for the promise to resolve
-      chrome.windows.getCurrent((window) => {
-        const windowId = window.id;
-        const storageKey = `watchingSpanish-${windowId}`;
-        chrome.storage.local.get(["user", storageKey], (result) => {
-          const user = result.user;
-          const watchingSpanish = result[storageKey];
-          if (user && watchingSpanish) {
-            const userId = user.uid;
-            updateMinutes(userId);
-          }
-        });
+      console.log("SS.UTL Received message to add minute");
+      chrome.storage.local.get(["user"], (result) => {
+        console.log("getting user if user is there we add minute", result);
+        const user = result.user;
+        if (user) {
+          const userId = user.uid;
+          updateMinutes(userId);
+        }
       });
       return false;
     } else if (request.type === "UPDATE_DAILY_GOAL") {
@@ -234,188 +228,55 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       });
       return true; // Indicates async response
+    } else if (request.type === "isVideoSpanish") {
+      console.log(
+        "SS.UTL Recieved request to check if video is in Spanish from backend",
+        request
+      );
+      isVideoInSpanish(request.videoDetails).then((res) => {
+        sendResponse({ success: true, isSpanish: res });
+        console.log("SS.UTL res", res);
+      });
+      return true; // Indicates async response
     }
   } catch (error) {
     sendResponse({ success: false, error: error.message });
   }
 });
 
-// Check if a user exists in the database
+// Check if video is in Spanish
+async function isVideoInSpanish(videoDetails) {
+  const lowerCaseTags = videoDetails.tags
+    ? videoDetails.tags.map((tag) => tag.toLowerCase())
+    : [];
+  const isWatchingSpanish = lowerCaseTags.includes("español");
 
-// Save user to Firebase Realtime Database
+  const defaultAudioLanguage = videoDetails.defaultAudioLanguage
+    ? videoDetails.defaultAudioLanguage.toLowerCase()
+    : "";
 
-// Get youtube video details
-async function fetchVideoDetails(user, videoId) {
-  const apiKey = user.apiKey; // Replace with your YouTube API key
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+  const isTitleInSpanish =
+    francAll(videoDetails.title, { only: ["spa"] })[0][0] === "spa";
+  const isDescriptionInSpanish =
+    francAll(videoDetails.description, { only: ["spa"] })[0][0] === "spa";
 
-  try {
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-    if (data.items && data.items.length > 0) {
-      return data.items[0].snippet;
-    } else {
-      throw new Error("Video not found");
-    }
-  } catch (error) {
-    console.error("Error fetching video details:", error);
-    return null;
-  }
+  const watchingSpanish =
+    isWatchingSpanish ||
+    isTitleInSpanish ||
+    isDescriptionInSpanish ||
+    defaultAudioLanguage.includes("es");
+
+  // // Get the current window ID
+  // chrome.windows.getCurrent((window) => {
+  //   const windowId = window.id;
+  //   const storageKey = `watchingSpanish-${windowId}`;
+  //   chrome.storage.local.set({
+  //     [storageKey]: watchingSpanish,
+  //   });
+  // });
+
+  return watchingSpanish;
 }
-
-// Function to check if the current tab is a YouTube video
-function checkYouTubeVideo(tabId) {
-  chrome.storage.local.get("user", (result) => {
-    const user = result.user;
-    if (user && user.apiKey) {
-      chrome.tabs.get(tabId, (tab) => {
-        try {
-          const url = new URL(tab.url);
-          if (url.hostname === "www.youtube.com" && url.pathname === "/watch") {
-            const videoId = url.searchParams.get("v");
-            if (videoId) {
-              fetchVideoDetails(user, videoId)
-                .then((videoDetails) => {
-                  console.log("videoDetails", videoDetails);
-                  // If video default language is Spanish, set local storage "watching_spanish" to true
-
-                  const lowerCaseTags = videoDetails.tags
-                    ? videoDetails.tags.map((tag) => tag.toLowerCase())
-                    : [];
-
-                  const isWatchingSpanish = lowerCaseTags.some((tag) =>
-                    keywords.map((word) => word.toLowerCase()).includes(tag)
-                  );
-
-                  const defaultAudioLanguage = videoDetails.defaultAudioLanguage
-                    ? videoDetails.defaultAudioLanguage.toLowerCase()
-                    : "";
-
-                  const titleLanguage = francAll(videoDetails.title, {
-                    only: ["spa"],
-                  })[0][0];
-                  console.log("titleLanguage", titleLanguage);
-                  const isTitleInSpanish = titleLanguage === "spa";
-
-                  //check description
-                  const descriptionLanguage = francAll(
-                    videoDetails.description,
-                    { only: ["spa"] }
-                  )[0][0];
-                  console.log("descriptionLanguage", descriptionLanguage);
-                  const isDescriptionInSpanish = descriptionLanguage === "spa";
-
-                  const watchingSpanish =
-                    defaultAudioLanguage.includes("es") ||
-                    isWatchingSpanish ||
-                    isTitleInSpanish ||
-                    isDescriptionInSpanish;
-
-                  // Get the current window ID
-                  chrome.windows.getCurrent((window) => {
-                    const windowId = window.id;
-                    const storageKey = `watchingSpanish-${windowId}`;
-
-                    // Store the state in local storage with the window ID
-                    chrome.storage.local.set({
-                      [storageKey]: watchingSpanish,
-                    });
-                  });
-                })
-                .catch((error) => {
-                  console.error("Error fetching video details:", error);
-                });
-            }
-          } else {
-            // Get the current window ID
-            chrome.windows.getCurrent((window) => {
-              const windowId = window.id;
-              const storageKey = `watchingSpanish-${windowId}`;
-
-              // Store the state in local storage with the window ID
-              chrome.storage.local.set({
-                [storageKey]: false,
-              });
-            });
-          }
-        } catch (error) {
-          chrome.windows.getCurrent((window) => {
-            const windowId = window.id;
-            const storageKey = `watchingSpanish-${windowId}`;
-
-            // Store the state in local storage with the window ID
-            chrome.storage.local.set({
-              [storageKey]: false,
-            });
-          });
-        }
-      });
-    }
-  });
-}
-
-// Listen for tab updates
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete") {
-    checkYouTubeVideo(tabId);
-  }
-  //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
-
-// Listen for tab activation
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  checkYouTubeVideo(activeInfo.tabId);
-  //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
-
-// Listen for extension installation or startup
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs.length > 0) {
-      checkYouTubeVideo(tabs[0].id);
-    }
-  });
-  //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
-
-chrome.runtime.onStartup.addListener(() => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs.length > 0) {
-      checkYouTubeVideo(tabs[0].id);
-    }
-  });
-  //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
-
-// Listen for popup opening
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.message === "POPUP_OPENED") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0) {
-        checkYouTubeVideo(tabs[0].id);
-      }
-    });
-  }
-  //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
-
-// Listen for changes in local storage (e.g., user sign-in)
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes.user) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0) {
-        checkYouTubeVideo(tabs[0].id);
-      }
-    });
-  }
-  //Not async since we don't need to wait for the promise to resolve
-  return false;
-});
 
 // Configure side panel behavior
 chrome.sidePanel
