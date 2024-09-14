@@ -99,6 +99,7 @@ export default function Home() {
 
     if (res.success) {
       setUser(null);
+      console.log("User signed out");
     }
   };
 

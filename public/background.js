@@ -90,6 +90,7 @@ async function setupOffscreenDocument(path) {
 async function closeOffscreenDocument() {
   if (await hasDocument()) {
     await chrome.offscreen.closeDocument();
+    console.log("Offscreen document closed");
   }
 }
 
@@ -174,6 +175,7 @@ async function firebaseSignOut() {
 
     // Close the offscreen document
     await closeOffscreenDocument();
+    console.log("Sign-out ACTUALLY CLOSED successful");
 
     return true;
   } catch (error) {
