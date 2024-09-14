@@ -5,6 +5,7 @@ let totalWatchedTime = 0; // in seconds
 let watching = false;
 let timerInterval = null;
 let lastSentTime = 0;
+let currentVideoSrc = "";
 
 function startTimer() {
   if (!watching) {
@@ -32,6 +33,12 @@ function attachListenersToYouTubePlayer() {
   const video = document.querySelector("video");
 
   if (video) {
+    // Check if it's a new video by comparing the src attribute
+    if (video.src !== currentVideoSrc) {
+      currentVideoSrc = video.src; // Update the current video src
+      console.log("New video detected:", currentVideoSrc);
+    }
+
     video.addEventListener("play", startTimer);
     video.addEventListener("pause", stopTimer);
     video.addEventListener("ended", stopTimer);
