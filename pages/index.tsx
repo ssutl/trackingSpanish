@@ -459,7 +459,7 @@ export default function Home() {
   const handleBannerClick = () => {
     if (user) {
       chrome.tabs.create({
-        url: `https://trackingspanish.vercel.app/${user.uid}`,
+        url: `https://trackingspanish.vercel.app/confirm/${user.uid}`,
       });
     }
   };
