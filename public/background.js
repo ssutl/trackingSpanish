@@ -164,6 +164,18 @@ async function firebaseAuth() {
   }
 }
 
+// Open offscreen doc for communication
+async function openOffscreenDoc() {
+  try {
+    await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
+
+    return true;
+  } catch (error) {
+    console.error("Authentication error:", error.message);
+    throw error;
+  }
+}
+
 async function firebaseSignOut() {
   try {
     await chrome.runtime.sendMessage({
@@ -201,7 +213,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Indicate that the response is asynchronous
       return true;
     } else if (request.type === "WATCHED_ONE_MINUTE") {
+      console.log("WATCHED_ONE_MINUTE being sent to offscreen");
       chrome.storage.local.get(["user"], (result) => {
+        console.log("result", result);
         const user = result.user;
         if (user) {
           const userId = user.uid;
@@ -234,6 +248,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true, isSpanish: res });
       });
       return true; // Indicates async response
+    } else if (request.type === "POPUP_OPENED") {
+      openOffscreenDoc().then((res) => {
+        sendResponse({ success: true });
+      });
     }
   } catch (error) {
     sendResponse({ success: false, error: error.message });
