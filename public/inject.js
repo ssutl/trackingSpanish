@@ -4,7 +4,7 @@ let totalWatchedTime = 0; // in seconds
 let watching = false;
 let timerInterval = null;
 let lastSentTime = 0;
-let currentPageUrl = window.location.href;
+let currentPageUrl = "";
 let isCurrentVideoSpanish = false;
 
 // Fetch YouTube video details
@@ -16,6 +16,7 @@ async function fetchVideoDetails(videoId, apiKey) {
     const data = await response.json();
 
     if (data.items && data.items.length > 0) {
+      console.log("SS.UTL video details", data.items[0].snippet);
       return data.items[0].snippet;
     } else {
       throw new Error("Video not found");

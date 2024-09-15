@@ -1,5 +1,5 @@
 console.log("Background script loaded");
-import { franc, francAll } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
+import { franc } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
 // Re-insert content scripts on extension reload
 chrome.runtime.onInstalled.addListener(async () => {
@@ -260,22 +260,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Check if video is in Spanish
 async function isVideoInSpanish(videoDetails) {
-  const lowerCaseTags = videoDetails.tags
+  const lowerCaseVideoTags = videoDetails.tags
     ? videoDetails.tags.map((tag) => tag.toLowerCase())
     : [];
-  const isWatchingSpanish = lowerCaseTags.includes("español");
+
+  const lowerCaseComparisonTags = keywords.map((tag) => tag.toLowerCase());
+
+  const doesVideoTagsHaveSpanish = lowerCaseVideoTags.some((tag) =>
+    lowerCaseComparisonTags.includes(tag)
+  );
 
   const defaultAudioLanguage = videoDetails.defaultAudioLanguage
     ? videoDetails.defaultAudioLanguage.toLowerCase()
     : "";
 
-  const isTitleInSpanish =
-    francAll(videoDetails.title, { only: ["spa"] })[0][0] === "spa";
-  const isDescriptionInSpanish =
-    francAll(videoDetails.description, { only: ["spa"] })[0][0] === "spa";
+  const isTitleInSpanish = franc(videoDetails.title) === "spa";
+  const isDescriptionInSpanish = franc(videoDetails.description) === "spa";
 
   const watchingSpanish =
-    isWatchingSpanish ||
+    doesVideoTagsHaveSpanish ||
     isTitleInSpanish ||
     isDescriptionInSpanish ||
     defaultAudioLanguage.includes("es");
