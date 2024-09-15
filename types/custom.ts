@@ -22,6 +22,7 @@ interface UserData {
   name: string;
   created_at: string;
   paid: boolean;
+  photo_url: string;
   watched_info: {
     [date: string]: {
       synced_with_ds: boolean;

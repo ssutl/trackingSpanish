@@ -104,6 +104,7 @@ async function getAuthPopup() {
     if (auth?.name === "FirebaseError") {
       throw new Error(auth.message || "Firebase authentication error");
     }
+    console.log("auth", auth);
     return auth;
   } catch (error) {
     throw error;
