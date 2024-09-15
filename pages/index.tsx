@@ -473,7 +473,7 @@ export default function Home() {
       >
         {displayTrialBanner && (
           <div
-            className="w-full bg-secondary border border-white border-opacity-5 text-white p-2 rounded-md mb-10"
+            className="w-full bg-secondary border border-white border-opacity-5 text-white py-2 px-3 rounded-md mb-10 cursor-pointer"
             onClick={handleBannerClick}
           >
             <p className="text-center">
