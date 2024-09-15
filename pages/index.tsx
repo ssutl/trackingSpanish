@@ -391,20 +391,21 @@ export default function Home() {
     for (const key in userData.watched_info) {
       totalWatched += userData.watched_info[key].minutes_watched;
     }
+    console.log("totalWatched", totalWatched);
 
     return (
       <div className="w-full flex flex-col">
         <h2 className="text-xl text-orange-400 font-medium">Levels</h2>
         {levels.map((level, index) => {
           const requiredMinutes = level.hours_of_input * 60;
+          console.log("requiredMinutes", requiredMinutes);
           const percentage = Math.min(
             (totalWatched / requiredMinutes) * 100,
             100
           );
           const userGoalPerDay = userData.daily_goal;
-          const daysToReach = Math.round(
-            requiredMinutes - totalWatched / userGoalPerDay
-          );
+          const minutesLeft = requiredMinutes - totalWatched;
+          const daysToReach = Math.ceil(minutesLeft / userGoalPerDay);
 
           return (
             <div
