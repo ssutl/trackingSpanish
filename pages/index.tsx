@@ -57,6 +57,11 @@ export default function Home() {
   const [newDailyGoal, setNewDailyGoal] = React.useState<number>(
     userData ? userData.daily_goal : 10
   );
+  const withinTrialDate = userData
+    ? new Date(userData.created_at).getTime() + 7 * 24 * 60 * 60 * 1000 >
+      Date.now()
+    : false;
+  const displayTrialBanner = withinTrialDate && !userData.paid;
 
   useEffect(() => {
     getUserFromStorage();
@@ -98,6 +103,7 @@ export default function Home() {
     const res = await chrome.runtime.sendMessage({ type: "sign_out" });
 
     if (res.success) {
+      setUserData(null);
       setUser(null);
       console.log("User signed out");
     }
@@ -122,7 +128,7 @@ export default function Home() {
 
   const Navbar = () => (
     <div className="w-full flex justify-center items-center px-10 h-16 border-b border-white border-opacity-5 text-white">
-      {user ? (
+      {userData ? (
         <>
           <div className="rounded-full bg-secondary w-10 h-10 flex items-center justify-center mr-auto">
             <img src={user.photoURL} className="w-8 h-8 rounded-full" />
@@ -443,18 +449,46 @@ export default function Home() {
     );
   };
 
+  const handleBannerClick = () => {
+    if (user) {
+      chrome.tabs.create({
+        url: `https://trackingspanish.vercel.app/${user.uid}`,
+      });
+    }
+  };
+
   const Body = () => {
     return (
       <div
         className={`w-full flex px-10 py-5 flex-col overflow-y-scroll no-scrollbar ${
-          user ? "h-[calc(100vh-128px)]" : "h-[calc(100vh-64px)]"
+          userData ? "h-[calc(100vh-128px)]" : "h-[calc(100vh-64px)]"
         }`}
       >
-        {user ? (
+        {displayTrialBanner && (
+          <div
+            className="w-full bg-secondary border border-white border-opacity-5 text-white p-2 rounded-md mb-10"
+            onClick={handleBannerClick}
+          >
+            <p className="text-center">
+              You have{" "}
+              {7 -
+                Math.floor(
+                  (Date.now() - new Date(userData.created_at).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )}{" "}
+              days left in your trial. Click to upgrade for unlimited access.
+            </p>
+          </div>
+        )}
+        {userData && (withinTrialDate || userData.paid) ? (
           <>
             {currentPage === "Stats" && userData && <StatsPage />}
             {currentPage === "Levels" && <LevelPage />}
             {currentPage === "Settings" && <SettingsPage />}
+          </>
+        ) : userData && (!withinTrialDate || !userData.paid) ? (
+          <>
+            <h1 className="text-white text-center">PAY ME NIGGGAAAAHH</h1>
           </>
         ) : (
           // Login page

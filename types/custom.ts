@@ -21,9 +21,7 @@ interface UserData {
   daily_goal: number;
   name: string;
   created_at: string;
-  dialects_watched_info: {
-    [dialect: string]: number;
-  };
+  paid: boolean;
   watched_info: {
     [date: string]: {
       synced_with_ds: boolean;
