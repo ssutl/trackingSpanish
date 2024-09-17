@@ -323,6 +323,18 @@ async function isVideoInSpanish(videoDetails) {
   return watchingSpanish;
 }
 
+chrome.tabs.onUpdated.addListener(() => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tab = tabs[0];
+
+    if (!tab || !tab.id) {
+      return;
+    }
+
+    chrome.tabs.sendMessage(tab.id, { type: "TAB_UPDATED" });
+  });
+});
+
 // Configure side panel behavior
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
