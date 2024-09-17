@@ -101,10 +101,6 @@ async function getAuthPopup() {
       type: "firebase-auth",
       target: "offscreen",
     });
-    if (auth?.name === "FirebaseError") {
-      throw new Error(auth.message || "Firebase authentication error");
-    }
-    console.log("auth", auth);
     return auth;
   } catch (error) {
     throw error;
@@ -149,8 +145,10 @@ async function firebaseAuth() {
 
     const res = await getAuthPopup();
     const auth = res.result;
-    console.log("auth", auth);
 
+    if (!auth.user && auth.error) {
+      throw new Error(auth.error.message);
+    }
     // Persist user data in chrome.storage.local
     await chrome.storage.local.set({
       user: auth.user,
@@ -159,7 +157,6 @@ async function firebaseAuth() {
 
     return auth;
   } catch (error) {
-    console.error("Authentication error:", error.message);
     throw error;
   }
 }
@@ -223,9 +220,13 @@ async function fetchVideoDetails(videoId, apiKey) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     if (request.type === "sign_in") {
-      firebaseAuth().then((auth) => {
-        sendResponse({ success: true, type: "sign_in" });
-      });
+      firebaseAuth()
+        .then((auth) => {
+          sendResponse({ success: true, type: "sign_in" });
+        })
+        .catch((error) => {
+          sendResponse({ success: false, error: error.message });
+        });
       // Indicate that the response is asynchronous
       return true;
     } else if (request.type === "sign_out") {
@@ -323,16 +324,20 @@ async function isVideoInSpanish(videoDetails) {
   return watchingSpanish;
 }
 
-chrome.tabs.onUpdated.addListener(() => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const tab = tabs[0];
-
-    if (!tab || !tab.id) {
-      return;
-    }
-
-    chrome.tabs.sendMessage(tab.id, { type: "TAB_UPDATED" });
-  });
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.active) {
+    // Wait for a short period to ensure the content script is fully injected
+    setTimeout(() => {
+      chrome.tabs.sendMessage(tabId, { type: "TAB_UPDATED" }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            "Message send error:",
+            chrome.runtime.lastError.message
+          );
+        }
+      });
+    }, 1000); // Delay in milliseconds
+  }
 });
 
 // Configure side panel behavior

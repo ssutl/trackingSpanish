@@ -89,12 +89,11 @@ function attachListenersToYouTubePlayer() {
 // Initial attachment if video is already present
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  console.log("SS.UTL message received", request);
-
   if (request.type === "TAB_UPDATED") {
     attachListenersToYouTubePlayer();
     checkVideoIsSpanish();
   }
+  return false;
 });
 
 chrome.storage.onChanged.addListener(function (res) {
