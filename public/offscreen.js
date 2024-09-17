@@ -60,6 +60,15 @@ function handleChromeMessages(message, sender, sendResponse) {
       { type: "firebase-signout" },
       new URL(_URL).origin
     );
+  } else if (message.type === "fetch-video-details") {
+    iframe.contentWindow.postMessage(
+      {
+        type: "fetch-video-details",
+        videoId: message.data.videoId,
+        apiKey: message.data.apiKey,
+      },
+      new URL(_URL).origin
+    );
   }
   return true;
 }

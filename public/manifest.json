@@ -28,6 +28,7 @@
   "content_scripts": [
     {
       "matches": ["https://*/*", "http://*/*"],
+      "exclude_matches": ["https://tracking-spanish-login.vercel.app/*"],
       "js": ["inject.js"]
     }
   ],

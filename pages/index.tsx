@@ -77,6 +77,13 @@ export default function Home() {
       const userRef = ref(db, `Users/${userId}`);
 
       onValue(userRef, (snapshot) => {
+        //if snapshot is null, then user is not in the database and we should clear storage
+        if (!snapshot.exists()) {
+          setUser(null);
+          //clear all local storage
+          chrome.storage.local.clear();
+          return;
+        }
         const data = snapshot.val();
         setUserData(data);
       });

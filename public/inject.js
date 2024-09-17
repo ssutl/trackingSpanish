@@ -1,4 +1,4 @@
-console.log("Message from inject.js");
+console.log("SS.UTL inject.js");
 
 let totalWatchedTime = 0; // in seconds
 let watching = false;
@@ -38,6 +38,9 @@ function stopTimer() {
 
 // Check video is spanish
 async function checkVideoIsSpanish() {
+  console.log("SS.UTL hostname", window.location.hostname);
+  console.log("SS.UTL pathname", window.location.pathname);
+  console.log("SS.UTL href", window.location.href);
   if (
     window.location.hostname !== "www.youtube.com" ||
     window.location.pathname !== "/watch"
@@ -46,8 +49,10 @@ async function checkVideoIsSpanish() {
   }
 
   const video = document.querySelector("video");
+  console.log("ss.utl video", video);
 
   if (video) {
+    console.log("ss.utl video exists");
     // If the page URL has changed and it's a YouTube watch URL
     // Extract video ID from URL
     const videoId = new URLSearchParams(window.location.search).get("v");
@@ -58,6 +63,11 @@ async function checkVideoIsSpanish() {
       type: "FETCH_VIDEO_DETAILS",
       videoId,
     });
+
+    if (!res.success) {
+      console.log("SS.UTL error fetching video details", res.error);
+      return;
+    }
 
     const videoDetails = res.videoDetails;
 
@@ -97,6 +107,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 });
 
 chrome.storage.onChanged.addListener(function (res) {
+  console.log("SS.UTL storage changed", res);
   checkVideoIsSpanish();
 });
 

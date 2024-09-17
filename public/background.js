@@ -138,6 +138,23 @@ async function updateDailyGoal(userId, dailyGoal) {
   }
 }
 
+async function fetchVideoDetails(videoId, apiKey) {
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: "fetch-video-details",
+      target: "offscreen",
+      data: {
+        videoId,
+        apiKey,
+      },
+    });
+    console.log("res from fetch video details", res);
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
 // Firebase authentication process
 async function firebaseAuth() {
   try {
@@ -181,7 +198,7 @@ async function firebaseSignOut() {
     });
 
     // Optionally, you can remove any locally stored data
-    await chrome.storage.local.remove("user");
+    await chrome.storage.local.clear();
 
     // Close the offscreen document
     await closeOffscreenDocument();
@@ -191,28 +208,6 @@ async function firebaseSignOut() {
   } catch (error) {
     console.error("Sign-out error:", error.message);
     throw error;
-  }
-}
-
-// Fetch YouTube video details
-async function fetchVideoDetails(videoId, apiKey) {
-  //Get apikey from user in chrome storage
-
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
-
-  try {
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-
-    if (data.items && data.items.length > 0) {
-      console.log("SS.UTL video details", data.items[0].snippet);
-      return data.items[0].snippet;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Error fetching video details:", error);
-    return null;
   }
 }
 
@@ -276,15 +271,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
       });
     } else if (request.type === "FETCH_VIDEO_DETAILS") {
+      console.log("SS.UTL video request recieved");
       chrome.storage.local.get(["user"], (result) => {
         const user = result.user;
         if (user) {
           const userApiKey = user.apiKey;
-          fetchVideoDetails(request.videoId, userApiKey).then((res) => {
-            if (res !== null) {
-              sendResponse({ success: true, videoDetails: res });
-            }
-          });
+          fetchVideoDetails(request.videoId, userApiKey)
+            .then((res) => {
+              sendResponse({ success: true, videoDetails: res.videoDetails });
+            })
+            .catch((error) => {
+              sendResponse({ success: false, error: error.message });
+            });
         } else {
           sendResponse({ success: false, error: "User not found" });
         }
@@ -325,7 +323,7 @@ async function isVideoInSpanish(videoDetails) {
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.active) {
+  if (changeInfo.status === "complete" && tab.active && changeInfo.url) {
     // Wait for a short period to ensure the content script is fully injected
     setTimeout(() => {
       chrome.tabs.sendMessage(tabId, { type: "TAB_UPDATED" }, (response) => {
