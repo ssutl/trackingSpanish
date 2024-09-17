@@ -197,6 +197,28 @@ async function firebaseSignOut() {
   }
 }
 
+// Fetch YouTube video details
+async function fetchVideoDetails(videoId, apiKey) {
+  //Get apikey from user in chrome storage
+
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data.items && data.items.length > 0) {
+      console.log("SS.UTL video details", data.items[0].snippet);
+      return data.items[0].snippet;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching video details:", error);
+    return null;
+  }
+}
+
 // Handle messages from the extension
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
@@ -252,6 +274,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       openOffscreenDoc().then((res) => {
         sendResponse({ success: true });
       });
+    } else if (request.type === "FETCH_VIDEO_DETAILS") {
+      chrome.storage.local.get(["user"], (result) => {
+        const user = result.user;
+        if (user) {
+          const userApiKey = user.apiKey;
+          fetchVideoDetails(request.videoId, userApiKey).then((res) => {
+            if (res !== null) {
+              sendResponse({ success: true, videoDetails: res });
+            }
+          });
+        } else {
+          sendResponse({ success: false, error: "User not found" });
+        }
+      });
+      return true; // Indicates async response
     }
   } catch (error) {
     sendResponse({ success: false, error: error.message });
