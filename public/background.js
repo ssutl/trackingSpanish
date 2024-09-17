@@ -3,27 +3,51 @@ import { franc } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
 // Re-insert content scripts on extension reload
 chrome.runtime.onInstalled.addListener(async () => {
-  for (const cs of chrome.runtime.getManifest().content_scripts) {
-    for (const tab of await chrome.tabs.query({ url: cs.matches })) {
+  const manifest = chrome.runtime.getManifest();
+
+  for (const cs of manifest.content_scripts) {
+    const tabs = await chrome.tabs.query({ url: cs.matches });
+
+    for (const tab of tabs) {
+      // Skip chrome and extension URLs
       if (tab.url.match(/(chrome|chrome-extension):\/\//gi)) {
         continue;
       }
-      const target = { tabId: tab.id, allFrames: cs.all_frames };
-      if (cs.js && cs.js.length > 0) {
-        chrome.scripting.executeScript({
-          files: cs.js,
-          injectImmediately: cs.run_at === "document_start",
-          world: cs.world, // requires Chrome 111+
-          target,
-        });
-      }
-      if (cs.css && cs.css.length > 0) {
-        chrome.scripting.insertCSS({
-          files: cs.css,
-          origin: cs.origin,
-          target,
-        });
-      }
+
+      // Send message to check if the content script is already present
+      chrome.tabs.sendMessage(
+        tab.id,
+        { greeting: "hello" },
+        function (response) {
+          // If content script responds, it is already injected
+          if (chrome.runtime.lastError || !response) {
+            // Content script is not present, proceed with injection
+
+            const target = { tabId: tab.id, allFrames: cs.all_frames };
+
+            // Inject JavaScript if defined
+            if (cs.js && cs.js.length > 0) {
+              chrome.scripting.executeScript({
+                files: cs.js,
+                injectImmediately: cs.run_at === "document_start",
+                world: cs.world || "ISOLATED", // default to ISOLATED if not specified
+                target,
+              });
+            }
+
+            // Inject CSS if defined
+            if (cs.css && cs.css.length > 0) {
+              chrome.scripting.insertCSS({
+                files: cs.css,
+                target,
+                origin: cs.origin || "AUTHOR", // default to AUTHOR if not specified
+              });
+            }
+          } else {
+            console.log("Content script already injected into tab", tab.id);
+          }
+        }
+      );
     }
   }
 });
@@ -323,18 +347,29 @@ async function isVideoInSpanish(videoDetails) {
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.active && changeInfo.url) {
+  if (changeInfo.url) {
     // Wait for a short period to ensure the content script is fully injected
-    setTimeout(() => {
-      chrome.tabs.sendMessage(tabId, { type: "TAB_UPDATED" }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error(
-            "Message send error:",
-            chrome.runtime.lastError.message
+    //check if user is in local storage
+    chrome.storage.local.get("user", (result) => {
+      const user = result.user;
+      console.log("user", user);
+      if (user) {
+        setTimeout(() => {
+          chrome.tabs.sendMessage(
+            tabId,
+            { type: "TAB_UPDATED" },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.log(
+                  "Message send error:",
+                  chrome.runtime.lastError.message
+                );
+              }
+            }
           );
-        }
-      });
-    }, 1000); // Delay in milliseconds
+        }, 1000);
+      }
+    });
   }
 });
 
