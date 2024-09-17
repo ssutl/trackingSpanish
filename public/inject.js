@@ -107,8 +107,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 });
 
 chrome.storage.onChanged.addListener(function (res) {
-  console.log("SS.UTL storage changed", res);
   checkVideoIsSpanish();
+
+  const video = document.querySelector("video");
+
+  // Check if the video is already playing when page loads
+  if (!video.paused && !video.ended) {
+    console.log("SS.UTL video is already playing, starting timer");
+    startTimer(); // Start the timer immediately if the video is playing
+  }
 });
 
 // OnLoad

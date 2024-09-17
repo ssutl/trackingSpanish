@@ -80,6 +80,7 @@ export default function Home() {
         //if snapshot is null, then user is not in the database and we should clear storage
         if (!snapshot.exists()) {
           setUser(null);
+          setUserData(null);
           //clear all local storage
           chrome.storage.local.clear();
           return;
