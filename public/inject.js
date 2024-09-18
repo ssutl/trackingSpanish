@@ -1,35 +1,22 @@
 (function () {
-  console.log("SS.UTL inject.js");
-
-  chrome.runtime.onMessage.addListener(function (
-    request,
-    sender,
-    sendResponse
-  ) {
-    if (request.greeting == "hello") sendResponse({ message: "hi" });
-  });
-
-  // Comparing to a literal value to prevent matching a DOM element with id="hasRun"
-  // https://stackoverflow.com/q/3434278/do-dom-tree-elements-with-ids-become-global
-  if (window.hasRun === true) return;
+  if (window.hasRun) return;
   window.hasRun = true;
+  console.log("SS.UTL injected");
 
   let totalWatchedTime = 0; // in seconds
-  let watching = false;
   let timerInterval = null;
   let lastSentTime = 0;
   let isCurrentVideoSpanish = false;
 
   // Start timer
   function startTimer() {
-    console.log("SS.UTL startTimer is called");
-    if (!watching) {
-      watching = true;
+    console.log("SS.UTL starting timer");
+    if (!timerInterval) {
       timerInterval = setInterval(() => {
         totalWatchedTime++;
 
+        // Every 60 seconds, send a message if video is in Spanish
         if (totalWatchedTime - lastSentTime >= 60) {
-          // Before sending the message, check if video is in Spanish
           lastSentTime = totalWatchedTime;
           console.log("SS.UTL minute passed");
 
@@ -44,111 +31,85 @@
 
   // Stop timer
   function stopTimer() {
-    console.log("SS.UTL stopTimer is called");
-    if (watching) {
-      watching = false;
+    console.log("SS.UTL stopping timer");
+    if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
     }
   }
 
-  // Check video is spanish
-  async function checkVideoIsSpanish() {
-    if (
-      window.location.hostname !== "www.youtube.com" ||
-      window.location.pathname !== "/watch"
-    ) {
-      return;
-    }
-
-    const video = document.querySelector("video");
-
-    if (video) {
-      // If the page URL has changed and it's a YouTube watch URL
-      // Extract video ID from URL
-      const videoId = new URLSearchParams(window.location.search).get("v");
-
-      // Fetch user from local storage and check if video is Spanish
-
-      const res = await chrome.runtime.sendMessage({
-        type: "FETCH_VIDEO_DETAILS",
-        videoId,
-      });
-
-      if (!res.success) {
-        console.log("SS.UTL error fetching video details", res.error);
-        return;
-      }
-
-      const videoDetails = res.videoDetails;
-
-      if (videoDetails) {
-        console.log("ss.utl videoDetails", videoDetails);
-        const res = await chrome.runtime.sendMessage({
-          type: "isVideoSpanish",
-          videoDetails,
-        });
-        isCurrentVideoSpanish = res.isSpanish;
-        console.log("SS.UTL isCurrentVideoSpanish", isCurrentVideoSpanish);
-      }
-    }
-  }
-
   // Attach listeners to video player
-  function attachListenersToYouTubePlayer() {
+  function attachListeners() {
     const video = document.querySelector("video");
 
-    if (!video) {
-      return;
+    if (
+      !video.dataset.listenersAttached &&
+      video &&
+      window.location.href.includes("youtube.com/watch")
+    ) {
+      console.log("SS.UTL listeners attached");
+      // Attach listeners if not already attached
+      video.addEventListener("play", startTimer);
+      video.addEventListener("pause", stopTimer);
+      video.addEventListener("ended", stopTimer);
+
+      // Set flag to indicate listeners are attached
+      video.dataset.listenersAttached = "true";
+    } else {
+      console.log("SS.UTL listeners already attached");
     }
 
-    console.log("SS.UTL attaching listeners to video player");
-
-    // Remove existing listeners
-    video.removeEventListener("play", startTimer);
-    video.removeEventListener("pause", stopTimer);
-    video.removeEventListener("ended", stopTimer);
-
-    video.addEventListener("play", startTimer);
-    video.addEventListener("pause", stopTimer);
-    video.addEventListener("ended", stopTimer);
+    // Check if video is currently playing and start timer if it is
+    if (video && !video.paused) {
+      console.log("SS.UTL video is currently playing, starting timer");
+      startTimer();
+    }
   }
 
-  // Initial attachment if video is already present
+  // Check if video is in Spanish
+  async function checkIfVideoIsSpanish() {
+    if (!window.location.href.includes("youtube.com/watch")) return;
+    // Get video id from url v=?
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoId = urlParams.get("v");
 
-  chrome.runtime.onMessage.addListener(function (request) {
-    if (request.type === "TAB_UPDATED") {
-      console.log("SS.UTL tab updated");
-      attachListenersToYouTubePlayer();
-      checkVideoIsSpanish();
-    }
-
-    chrome.storage.local.get(["user"], function (res) {
-      if (res["user"]) {
-        const video = document.querySelector("video");
-        if (video && !video.paused && !video.ended) {
-          startTimer();
-        }
-      }
+    // Get video details send message to background
+    const res = await chrome.runtime.sendMessage({
+      type: "FETCH_VIDEO_DETAILS",
+      videoId,
     });
 
-    return false;
-  });
+    console.log("SS.UTL video details", res);
 
-  chrome.storage.onChanged.addListener(function (res) {
-    attachListenersToYouTubePlayer();
-    checkVideoIsSpanish();
+    const videoDetails = res.videoDetails;
 
-    if (res["user"]) {
-      console.log("SS.UTL user updated", res["user"]);
-      const video = document.querySelector("video");
-      if (video && !video.paused && !video.ended) {
-        startTimer();
-      }
+    if (videoDetails) {
+      const response = await chrome.runtime.sendMessage({
+        type: "isVideoSpanish",
+        videoDetails,
+      });
+      const isSpanish = response.isSpanish;
+      console.log("SS.UTL isSpanish", isSpanish);
+      isCurrentVideoSpanish = isSpanish;
+    }
+  }
+
+  // Listen to messages from background
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === "TAB_UPDATED") {
+      console.log("SS.UTL tab updated");
+      // When tab is updated, attach listeners to video player
+      attachListeners();
+      checkIfVideoIsSpanish();
     }
   });
 
-  // OnLoad
-  attachListenersToYouTubePlayer();
-  checkVideoIsSpanish();
+  // listen when local storage is updated
+  chrome.storage.onChanged.addListener((res) => {
+    if (res["user"]) {
+      console.log("SS.UTL state updated in local storage");
+      attachListeners();
+      checkIfVideoIsSpanish();
+    }
+  });
 })();
