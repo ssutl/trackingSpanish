@@ -8,6 +8,15 @@
   let lastSentTime = 0;
   let isCurrentVideoSpanish = false;
 
+  // Unique orphan message ID
+  const orphanMessageId = chrome.runtime.id + "orphanCheck";
+
+  // Dispatch event to detect orphaned state
+  window.dispatchEvent(new Event(orphanMessageId));
+
+  // Attach orphan check listener
+  window.addEventListener(orphanMessageId, unregisterOrphan);
+
   // Start timer
   function startTimer() {
     console.log("SS.UTL starting timer");
@@ -94,15 +103,47 @@
     }
   }
 
-  // Listen to messages from background
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Unregister listeners and clean up when orphaned
+  function unregisterOrphan() {
+    if (chrome.runtime.id) {
+      // We're not orphaned
+      return;
+    }
+    console.log("SS.UTL unregistering orphaned script");
+
+    // Remove event listeners
+    window.removeEventListener(orphanMessageId, unregisterOrphan);
+    const video = document.querySelector("video");
+    if (video) {
+      video.removeEventListener("play", startTimer);
+      video.removeEventListener("pause", stopTimer);
+      video.removeEventListener("ended", stopTimer);
+    }
+
+    // Stop the timer if running
+    stopTimer();
+
+    // Unregister message listeners
+    try {
+      chrome.runtime.onMessage.removeListener(onMessage);
+    } catch (e) {
+      console.error("Failed to remove message listener", e);
+    }
+
+    return true;
+  }
+
+  // Message listener function
+  function onMessage(request, sender, sendResponse) {
     if (request.type === "TAB_UPDATED") {
       console.log("SS.UTL tab updated");
-      // When tab is updated, attach listeners to video player
       attachListeners();
       checkIfVideoIsSpanish();
     }
-  });
+  }
+
+  // Listen to messages from background
+  chrome.runtime.onMessage.addListener(onMessage);
 
   // listen when local storage is updated
   chrome.storage.onChanged.addListener((res) => {

@@ -40,19 +40,36 @@ chrome.runtime.onInstalled.addListener(async () => {
         continue;
       }
       const target = { tabId: tab.id, allFrames: cs.all_frames };
-      if (cs.js[0])
-        chrome.scripting.executeScript({
-          files: cs.js,
-          injectImmediately: cs.run_at === "document_start",
-          world: cs.world, // requires Chrome 111+
+      // First, check if the content script has already been injected
+      chrome.scripting.executeScript(
+        {
           target,
-        });
-      if (cs.css[0])
-        chrome.scripting.insertCSS({
-          files: cs.css,
-          origin: cs.origin,
-          target,
-        });
+          func: () => !!window.hasRun, // Returns `true` if the script has already run
+        },
+        (results) => {
+          if (results && results[0]?.result) {
+            console.log("Content script already injected, skipping.");
+          } else {
+            // Inject the script if it hasn't been injected
+            if (cs.js && cs.js.length > 0) {
+              chrome.scripting.executeScript({
+                files: cs.js,
+                injectImmediately: cs.run_at === "document_start",
+                world: cs.world, // requires Chrome 111+
+                target,
+              });
+            }
+
+            if (cs.css && cs.css.length > 0) {
+              chrome.scripting.insertCSS({
+                files: cs.css,
+                origin: cs.origin,
+                target,
+              });
+            }
+          }
+        }
+      );
     }
   }
 });
