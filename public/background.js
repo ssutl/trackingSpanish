@@ -1,38 +1,6 @@
 console.log("Background script loaded");
 import { franc } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
-// Re-insert content scripts on extension reload
-chrome.runtime.onInstalled.addListener(async () => {
-  const contentScripts = chrome.runtime.getManifest().content_scripts || [];
-  for (const cs of contentScripts) {
-    for (const tab of await chrome.tabs.query({ url: cs.matches })) {
-      if (tab.url.match(/(chrome|chrome-extension):\/\//gi)) {
-        continue;
-      }
-      const target = { tabId: tab.id, allFrames: cs.all_frames };
-
-      // Check if cs.js exists and has at least one element before trying to access it
-      if (cs.js && cs.js.length > 0) {
-        chrome.scripting.executeScript({
-          files: cs.js,
-          injectImmediately: cs.run_at === "document_start",
-          world: cs.world || "ISOLATED", // Default to ISOLATED if not defined
-          target,
-        });
-      }
-
-      // Check if cs.css exists and has at least one element before trying to access it
-      if (cs.css && cs.css.length > 0) {
-        chrome.scripting.insertCSS({
-          files: cs.css,
-          origin: cs.origin || "AUTHOR", // Default to AUTHOR if not defined
-          target,
-        });
-      }
-    }
-  }
-});
-
 const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 
 let creating; // Global promise to avoid concurrency issues
