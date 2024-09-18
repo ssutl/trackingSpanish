@@ -1,5 +1,4 @@
 console.log("Background script loaded");
-import { franc } from "https://cdn.jsdelivr.net/npm/franc@6.2.0/+esm";
 
 const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 
@@ -33,6 +32,30 @@ const keywords = [
   "Español",
   "Estudiar",
 ];
+
+chrome.runtime.onInstalled.addListener(async () => {
+  for (const cs of chrome.runtime.getManifest().content_scripts) {
+    for (const tab of await chrome.tabs.query({ url: cs.matches })) {
+      if (tab.url.match(/(chrome|chrome-extension):\/\//gi)) {
+        continue;
+      }
+      const target = { tabId: tab.id, allFrames: cs.all_frames };
+      if (cs.js[0])
+        chrome.scripting.executeScript({
+          files: cs.js,
+          injectImmediately: cs.run_at === "document_start",
+          world: cs.world, // requires Chrome 111+
+          target,
+        });
+      if (cs.css[0])
+        chrome.scripting.insertCSS({
+          files: cs.css,
+          origin: cs.origin,
+          target,
+        });
+    }
+  }
+});
 
 // Helper function to check if an offscreen document is already active
 async function hasDocument() {
@@ -284,10 +307,19 @@ async function isVideoInSpanish(videoDetails) {
     ? videoDetails.defaultAudioLanguage.toLowerCase()
     : "";
 
-  const isTitleInSpanish = franc(videoDetails.title) === "spa";
-  console.log("isTitleInSpanish", franc(videoDetails.title));
-  const isDescriptionInSpanish = franc(videoDetails.description) === "spa";
-  console.log("isDescriptionInSpanish", franc(videoDetails.description));
+  const chromeLanguageTitle = await chrome.i18n.detectLanguage(
+    videoDetails.title
+  );
+
+  const isTitleInSpanish = chromeLanguageTitle.languages[0].language === "es";
+  console.log("isTitleInSpanish", isTitleInSpanish);
+
+  const chromeLanguageDescription = await chrome.i18n.detectLanguage(
+    videoDetails.description
+  );
+  const isDescriptionInSpanish =
+    chromeLanguageDescription.languages[0].language === "es";
+  console.log("isDescriptionInSpanish", isDescriptionInSpanish);
 
   const watchingSpanish =
     doesVideoTagsHaveSpanish ||
@@ -301,7 +333,7 @@ async function isVideoInSpanish(videoDetails) {
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url) {
+  if (changeInfo.status === "complete") {
     // Wait for a short period to ensure the content script is fully injected
     //check if user is in local storage
     chrome.storage.local.get("user", (result) => {
@@ -309,18 +341,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       console.log("user", user);
       if (user) {
         setTimeout(() => {
-          chrome.tabs.sendMessage(
-            tabId,
-            { type: "TAB_UPDATED" },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                console.log(
-                  "Message send error:",
-                  chrome.runtime.lastError.message
-                );
-              }
-            }
-          );
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const activeTab = tabs[0];
+            chrome.tabs.sendMessage(activeTab.id, {
+              type: "TAB_UPDATED",
+            });
+          });
         }, 1000);
       }
     });
