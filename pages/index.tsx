@@ -9,6 +9,7 @@ import { PiSignOut } from "react-icons/pi";
 import { IoStatsChart } from "react-icons/io5";
 import { GiProgression } from "react-icons/gi";
 import { PiExportFill } from "react-icons/pi";
+import { CardsActivityGoal } from "@/components/ui/activity-goal";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -56,9 +57,7 @@ export default function Home() {
     undefined
   );
   const [editingGoal, setEditingGoal] = React.useState<boolean>(false);
-  const [newDailyGoal, setNewDailyGoal] = React.useState<number>(
-    userData ? userData.daily_goal : 10
-  );
+
   const withinTrialDate = userData
     ? new Date(userData.created_at).getTime() + 7 * 24 * 60 * 60 * 1000 >
       Date.now()
@@ -121,23 +120,6 @@ export default function Home() {
       setUserData(null);
       setUser(null);
       console.log("User signed out");
-    }
-  };
-
-  const handleDailyGoal = async () => {
-    if (newDailyGoal > 0) {
-      const res = await chrome.runtime.sendMessage({
-        type: "UPDATE_DAILY_GOAL",
-        dailyGoal: newDailyGoal,
-      });
-
-      if (res.success) {
-        setEditingGoal(false);
-      } else {
-        alert("Error updating daily goal");
-      }
-    } else {
-      alert("Please enter a valid goal");
     }
   };
 
@@ -276,36 +258,10 @@ export default function Home() {
             </button>
           </div>
           {editingGoal ? (
-            <div className="flex items-center mt-5">
-              <input
-                type="number"
-                placeholder={userData.daily_goal.toString()}
-                className="text-white border-opacity-5 border bg-transparent border-white rounded-md p-2 w-20 mr-4 hover:bg-secondary"
-                onChange={(e) => {
-                  setNewDailyGoal(parseInt(e.target.value));
-                }}
-                value={newDailyGoal}
-                defaultValue={newDailyGoal}
-                autoFocus
-              />
-              <p className="text-base text-white font-normal mr-4 bg-opacity-20">
-                min/day
-              </p>
-              <button
-                type="submit"
-                className={`py-2 px-4 border border-white border-opacity-5 rounded-md text-white ${
-                  newDailyGoal > 0 &&
-                  newDailyGoal !== userData.daily_goal &&
-                  "bg-orange-400 cursor-pointer"
-                }`}
-                onClick={handleDailyGoal}
-                disabled={
-                  !(newDailyGoal > 0 && newDailyGoal !== userData.daily_goal)
-                }
-              >
-                Update
-              </button>
-            </div>
+            <CardsActivityGoal
+              currentDailyGoal={userData.daily_goal}
+              setEditingGoal={(val) => setEditingGoal(val)}
+            />
           ) : (
             <>
               <h3 className="text-lg mt-3 text-white font-normal">
@@ -357,7 +313,7 @@ export default function Home() {
           <h2 className="text-xl text-orange-400 font-medium">Your Activity</h2>
           <Calendar
             mode="single"
-            className="rounded-md text-white w-full mt-3 border border-white border-opacity-5 flex"
+            className="rounded-md  text-white w-full mt-3 border border-white border-opacity-5 flex  bg-orange-600 bg-opacity-1"
             classNames={{
               months:
                 "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 flex-1",

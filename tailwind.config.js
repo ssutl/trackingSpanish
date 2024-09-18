@@ -16,6 +16,13 @@ module.exports = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      backgroundOpacity: {
+        0.5: "0.008",
+        1: "0.01",
+        2: "0.02",
+        3: "0.03",
+        4: "0.04",
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
