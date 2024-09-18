@@ -12,6 +12,8 @@ import { PiExportFill } from "react-icons/pi";
 import { CardsActivityGoal } from "@/components/ui/activity-goal";
 import { GoalMetrics } from "@/components/ui/goal_metric";
 import { createGoalMetrics } from "../helpers/createGoalMetrics";
+import { TotalTimeStats } from "@/components/ui/totalWatched";
+import { createTotalWatchedMetrics } from "../helpers/createTotalMetrics";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -253,6 +255,7 @@ export default function Home() {
     const currentStreak = calculateStreak(userData.watched_info);
 
     const goalMetrics = createGoalMetrics(userData);
+    const totalMetrics = createTotalWatchedMetrics(userData);
 
     return (
       <div className="w-full space-y-10">
@@ -339,7 +342,6 @@ export default function Home() {
             }}
           />
         </div>
-
         {goalMetrics.length > 0 && (
           <div>
             <h2 className="text-xl text-orange-400 font-medium">
