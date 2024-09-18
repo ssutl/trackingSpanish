@@ -78,10 +78,7 @@ export function CardsActivityGoal({ currentDailyGoal, setEditingGoal }) {
   };
 
   return (
-    <Card
-      className="rounded-md w-full mt-3 border text-white border-white border-opacity-10 bg-orange-600 bg-opacity-1
-    "
-    >
+    <Card className="rounded-md w-full mt-3 border text-white border-white border-opacity-10 bg-orange-600 bg-opacity-1">
       <CardHeader className="pb-4">
         <CardTitle className="text-base">Daily Goal</CardTitle>
         <CardDescription>Set your daily watch goal.</CardDescription>

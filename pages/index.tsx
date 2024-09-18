@@ -10,6 +10,8 @@ import { IoStatsChart } from "react-icons/io5";
 import { GiProgression } from "react-icons/gi";
 import { PiExportFill } from "react-icons/pi";
 import { CardsActivityGoal } from "@/components/ui/activity-goal";
+import { GoalMetrics } from "@/components/ui/goal_metric";
+import { createGoalMetrics } from "../helpers/createGoalMetrics";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -57,6 +59,7 @@ export default function Home() {
     undefined
   );
   const [editingGoal, setEditingGoal] = React.useState<boolean>(false);
+  const [daily_goal, setDailyGoal] = React.useState<number>(10);
 
   const withinTrialDate = userData
     ? new Date(userData.created_at).getTime() + 7 * 24 * 60 * 60 * 1000 >
@@ -88,6 +91,13 @@ export default function Home() {
         }
         const data = snapshot.val();
         setUserData(data);
+
+        const dates = Object.keys(data.goal_info);
+        const mostRecentDate = dates.reduce((latest, current) =>
+          new Date(latest) > new Date(current) ? latest : current
+        );
+        const mostRecentGoal = data.goal_info[mostRecentDate].daily_goal;
+        setDailyGoal(mostRecentGoal);
       });
     }
   }, [user]);
@@ -192,7 +202,7 @@ export default function Home() {
         userData.watched_info[today].minutes_watched) ||
       0;
     const progressPercentage = Math.min(
-      (minutesWatchedToday / userData.daily_goal) * 100,
+      (minutesWatchedToday / daily_goal) * 100,
       100
     );
     //calculate the total watched minutes
@@ -242,6 +252,8 @@ export default function Home() {
 
     const currentStreak = calculateStreak(userData.watched_info);
 
+    const goalMetrics = createGoalMetrics(userData);
+
     return (
       <div className="w-full space-y-10">
         <div>
@@ -259,7 +271,7 @@ export default function Home() {
           </div>
           {editingGoal ? (
             <CardsActivityGoal
-              currentDailyGoal={userData.daily_goal}
+              currentDailyGoal={daily_goal}
               setEditingGoal={(val) => setEditingGoal(val)}
             />
           ) : (
@@ -268,7 +280,7 @@ export default function Home() {
                 {minutesWatchedToday} minutes
               </h3>
               <p className="text-base mt-0 text-white font-normal opacity-30">
-                out of {userData.daily_goal} minutes goal
+                out of {daily_goal} minutes goal
               </p>
               <div className="w-full rounded-2xl bg-secondary h-5 mt-2 overflow-hidden">
                 <div
@@ -327,6 +339,15 @@ export default function Home() {
             }}
           />
         </div>
+
+        {goalMetrics.length > 0 && (
+          <div>
+            <h2 className="text-xl text-orange-400 font-medium">
+              Your Goal Activity
+            </h2>
+            <GoalMetrics data={goalMetrics} />
+          </div>
+        )}
       </div>
     );
   };
@@ -377,7 +398,7 @@ export default function Home() {
             (totalWatched / requiredMinutes) * 100,
             100
           );
-          const userGoalPerDay = userData.daily_goal;
+          const userGoalPerDay = daily_goal;
           const minutesLeft = requiredMinutes - totalWatched;
           const daysToReach = Math.ceil(minutesLeft / userGoalPerDay);
 

@@ -18,7 +18,11 @@ interface GoogleUser {
 }
 
 interface UserData {
-  daily_goal: number;
+  goal_info: {
+    [date: string]: {
+      daily_goal: number;
+    };
+  };
   name: string;
   created_at: string;
   paid: boolean;
