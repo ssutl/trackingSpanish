@@ -52,7 +52,9 @@ export default function Home() {
   const [currentPage, setCurrentPage] = React.useState<
     "Stats" | "Levels" | "Settings"
   >("Stats");
-  const [userData, setUserData] = React.useState<UserData | null>(null);
+  const [userData, setUserData] = React.useState<UserData | null | undefined>(
+    undefined
+  );
   const [editingGoal, setEditingGoal] = React.useState<boolean>(false);
   const [newDailyGoal, setNewDailyGoal] = React.useState<number>(
     userData ? userData.daily_goal : 10
@@ -96,6 +98,9 @@ export default function Home() {
       const user = result.user as GoogleUser;
       if (user) {
         setUser(user);
+      } else {
+        setUser(null);
+        setUserData(null);
       }
     });
   };
@@ -504,6 +509,11 @@ export default function Home() {
           <>
             <h1 className="text-white text-center">PAY ME NIGGGAAAAHH</h1>
           </>
+        ) : userData === undefined ? (
+          // Loading
+          <p className="text-base  text-white font-normal opacity-30">
+            Loading...
+          </p>
         ) : (
           // Login page
           <>

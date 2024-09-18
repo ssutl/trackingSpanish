@@ -102,6 +102,8 @@
       return;
     }
 
+    console.log("SS.UTL attaching listeners to video player");
+
     // Remove existing listeners
     video.removeEventListener("play", startTimer);
     video.removeEventListener("pause", stopTimer);
@@ -117,12 +119,24 @@
   chrome.runtime.onMessage.addListener(function (request) {
     if (request.type === "TAB_UPDATED") {
       console.log("SS.UTL tab updated");
+      attachListenersToYouTubePlayer();
       checkVideoIsSpanish();
     }
+
+    chrome.storage.local.get(["user"], function (res) {
+      if (res["user"]) {
+        const video = document.querySelector("video");
+        if (video && !video.paused && !video.ended) {
+          startTimer();
+        }
+      }
+    });
+
     return false;
   });
 
   chrome.storage.onChanged.addListener(function (res) {
+    attachListenersToYouTubePlayer();
     checkVideoIsSpanish();
 
     if (res["user"]) {
