@@ -342,7 +342,7 @@ export default function Home() {
             }}
           />
         </div>
-        {goalMetrics.length > 0 && (
+        {goalMetrics.length > 1 && (
           <div>
             <h2 className="text-xl text-orange-400 font-medium">
               Your Goal Activity
