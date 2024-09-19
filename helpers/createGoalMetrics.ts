@@ -1,8 +1,9 @@
 export const createGoalMetrics = (userData: UserData) => {
-  const goalMetrics: { goal: number; watched: number }[] = [];
+  const goalMetrics: { goal: number; watched: number; date: string }[] = [];
   let lastGoal = 0; // Initialize the lastGoal variable to track the most recent goal
 
   const dates = Object.keys(userData.goal_info);
+  console.log("dates", dates);
   const mostRecentDate = dates.reduce((latest, current) =>
     new Date(latest) > new Date(current) ? latest : current
   );
@@ -24,8 +25,11 @@ export const createGoalMetrics = (userData: UserData) => {
     goalMetrics.push({
       goal: dailyGoal,
       watched: watchedMinutes,
+      date: date,
     });
   }
+
+  console.log(goalMetrics);
 
   return goalMetrics;
 };
