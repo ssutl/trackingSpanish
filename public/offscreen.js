@@ -69,6 +69,11 @@ function handleChromeMessages(message, sender, sendResponse) {
       },
       new URL(_URL).origin
     );
+  } else if (message.type === "firebase-delete-account") {
+    iframe.contentWindow.postMessage(
+      { type: "firebase-delete-account", userId: message.data.userId },
+      new URL(_URL).origin
+    );
   }
   return true;
 }

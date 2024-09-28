@@ -127,7 +127,7 @@ export function CardsActivityGoal({ currentDailyGoal, setEditingGoal }) {
       </CardContent>
       <CardFooter>
         <Button
-          className={`w-full border border-white border-opacity-5 bg-transparent  hover:bg-transparent ${
+          className={`w-full rounded-md border border-white border-opacity-5 bg-transparent  ${
             newDailyGoal !== currentDailyGoal
               ? "bg-orange-400"
               : "bg-transparent"

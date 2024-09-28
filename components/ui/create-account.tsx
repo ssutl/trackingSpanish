@@ -27,7 +27,7 @@ export function CardsCreateAccount({
         <Button
           variant="outline"
           onClick={handleSignIn}
-          className="bg-orange-600 bg-opacity-1 px-4 py-2 rounded-md w-full border border-white border-opacity-5 text-white flex justify-center"
+          className="bg-transparent rounded-md w-full border border-white border-opacity-5 text-white flex justify-center hover:bg-orange-400"
         >
           <Icons.google className="mr-2 h-4 w-4" />
           Google

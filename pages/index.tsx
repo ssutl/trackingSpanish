@@ -15,6 +15,8 @@ import { createGoalMetrics } from "../helpers/createGoalMetrics";
 import { TotalTimeStats } from "@/components/ui/totalWatched";
 import { createTotalWatchedMetrics } from "../helpers/createTotalMetrics";
 import { CardsCreateAccount } from "@/components/ui/create-account";
+import { Button } from "@/components/ui/button";
+import { DeleteAccount } from "@/components/ui/delete-account";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -69,6 +71,7 @@ export default function Home() {
       Date.now()
     : false;
   const displayTrialBanner = withinTrialDate && !userData.paid;
+  const displayUpgrade = !withinTrialDate && !userData?.paid;
 
   useEffect(() => {
     getUserFromStorage();
@@ -136,6 +139,17 @@ export default function Home() {
     }
   };
 
+  const handleDelete = async () => {
+    // Handle
+    const res = await chrome.runtime.sendMessage({ type: "DELETE_ACCOUNT" });
+
+    if (res.success) {
+      setUserData(null);
+      setUser(null);
+      console.log("Account deleted");
+    }
+  };
+
   const Navbar = () => (
     <div className="w-full flex justify-center items-center px-10 h-16 border-b border-white border-opacity-5 text-white">
       {userData ? (
@@ -191,6 +205,30 @@ export default function Home() {
         </button>
       </div>
     );
+
+  const UpgradeComponent = () => {
+    return (
+      <div
+        className="w-full flex flex-col items-center justify-center h-full cursor-pointer"
+        onClick={handleBannerClick}
+      >
+        <div className="flex flex-col text-white max-w-96">
+          <h1 className="text-5xl font-bold mb-5">
+            Unlock Your <span className="text-orange-400">Spanish</span>{" "}
+            Learning Potential
+          </h1>
+          <p className="text-base mb-5 text-white font-normal opacity-30">
+            Track your YouTube watching time and reach your daily Spanish goals!
+            Upgrade with a one-time payment of £5, and get unlimited access
+            forever.
+          </p>
+          <Button className="w-full border border-white border-opacity-5 bg-transparent hover:bg-orange-400">
+            Upgrade
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   const StatsPage = () => {
     const today = new Date()
@@ -257,6 +295,10 @@ export default function Home() {
 
     const goalMetrics = createGoalMetrics(userData);
     const totalMetrics = createTotalWatchedMetrics(userData);
+
+    if (displayUpgrade) {
+      return <UpgradeComponent />;
+    }
 
     return (
       <div className="w-full space-y-10">
@@ -392,6 +434,10 @@ export default function Home() {
       totalWatched += userData.watched_info[key].minutes_watched;
     }
 
+    if (displayUpgrade) {
+      return <UpgradeComponent />;
+    }
+
     return (
       <div className="w-full flex flex-col">
         <h2 className="text-xl text-orange-400 font-medium">Levels</h2>
@@ -443,7 +489,8 @@ export default function Home() {
   const SettingsPage = () => {
     return (
       <div className="w-full">
-        <h2 className="text-xl text-orange-400 font-medium">Export Data</h2>
+        <h2 className="text-xl text-orange-400 font-medium">Account</h2>
+        <DeleteAccount handleDelete={handleDelete} />
       </div>
     );
   };
@@ -459,7 +506,7 @@ export default function Home() {
   const Body = () => {
     return (
       <div
-        className={`w-full flex px-10 py-5 flex-col overflow-y-scroll no-scrollbar ${
+        className={`w-full flex px-10 py-5 flex-col overflow-y-scroll no-scrollbar relative ${
           userData ? "h-[calc(100vh-128px)]" : "h-[calc(100vh-64px)]"
         }`}
       >
@@ -479,15 +526,11 @@ export default function Home() {
             </p>
           </div>
         )}
-        {userData && (withinTrialDate || userData.paid) ? (
+        {userData ? (
           <>
             {currentPage === "Stats" && userData && <StatsPage />}
             {currentPage === "Levels" && <LevelPage />}
             {currentPage === "Settings" && <SettingsPage />}
-          </>
-        ) : userData && (!withinTrialDate || !userData.paid) ? (
-          <>
-            <h1 className="text-white text-center">PAY ME NIGGGAAAAHH</h1>
           </>
         ) : userData === undefined ? (
           // Loading

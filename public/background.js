@@ -224,6 +224,37 @@ async function firebaseSignOut() {
   }
 }
 
+async function firebaseDeleteAccount() {
+  try {
+    // Retrieve the user data from local storage
+    const { user } = await chrome.storage.local.get("user");
+
+    if (!user || !user.uid) {
+      console.error("No user found in local storage for deletion");
+      return false;
+    }
+
+    // Send a message to Firebase (through the offscreen iframe) to delete the account
+    await chrome.runtime.sendMessage({
+      type: "firebase-delete-account",
+      target: "offscreen",
+      data: { userId: user.uid },
+    });
+
+    // Clear the local storage to remove user-related data
+    await chrome.storage.local.clear();
+
+    // Close the offscreen document if it exists
+    await closeOffscreenDocument();
+
+    console.log("Account deleted successfully and offscreen document closed.");
+    return true;
+  } catch (error) {
+    console.error("Error deleting account:", error.message);
+    throw error;
+  }
+}
+
 // Handle messages from the extension
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
@@ -301,6 +332,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       });
       return true; // Indicates async response
+    } else if (request.type === "DELETE_ACCOUNT") {
+      firebaseDeleteAccount().then(() => {
+        sendResponse({ success: true, type: "delete_account" });
+      });
+
+      // Indicate that the response is asynchronous
+      return true;
     }
   } catch (error) {
     sendResponse({ success: false, error: error.message });
