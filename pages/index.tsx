@@ -14,6 +14,7 @@ import { GoalMetrics } from "@/components/ui/goal_metric";
 import { createGoalMetrics } from "../helpers/createGoalMetrics";
 import { TotalTimeStats } from "@/components/ui/totalWatched";
 import { createTotalWatchedMetrics } from "../helpers/createTotalMetrics";
+import { CardsCreateAccount } from "@/components/ui/create-account";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBU94yh1GICwAQbH6Sk1RvuJPrqlT4E2tA",
@@ -496,15 +497,7 @@ export default function Home() {
         ) : (
           // Login page
           <>
-            <button
-              onClick={handleSignIn}
-              className="bg-orange-600 bg-opacity-1 px-4 py-2 rounded-md w-full border border-white border-opacity-5 text-white flex justify-center"
-            >
-              <div className="flex items-center text-lg font-sans">
-                <FiChrome className="mr-5 text-xl" />
-                Sign in with Google
-              </div>
-            </button>
+            <CardsCreateAccount handleSignIn={handleSignIn} />
           </>
         )}
       </div>
