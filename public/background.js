@@ -269,9 +269,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Indicate that the response is asynchronous
       return true;
     } else if (request.type === "sign_out") {
-      firebaseSignOut().then(() => {
-        sendResponse({ success: true, type: "sign_out" });
-      });
+      firebaseSignOut()
+        .then(() => {
+          sendResponse({ success: true, type: "sign_out" });
+        })
+        .catch((error) => {
+          sendResponse({ success: false, error: error.message });
+        });
       // Indicate that the response is asynchronous
       return true;
     } else if (request.type === "WATCHED_ONE_MINUTE") {
@@ -333,9 +337,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true; // Indicates async response
     } else if (request.type === "DELETE_ACCOUNT") {
-      firebaseDeleteAccount().then(() => {
-        sendResponse({ success: true, type: "delete_account" });
-      });
+      firebaseDeleteAccount()
+        .then(() => {
+          sendResponse({ success: true, type: "delete_account" });
+        })
+        .catch((error) => {
+          console.log("error", error);
+          sendResponse({ success: false, error: error.message });
+        });
 
       // Indicate that the response is asynchronous
       return true;
