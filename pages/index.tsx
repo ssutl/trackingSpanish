@@ -512,7 +512,7 @@ export default function Home() {
       >
         {displayTrialBanner && (
           <div
-            className="w-full bg-secondary bg-opacity-1 border border-white border-opacity-5 text-white py-2 px-3 rounded-md mb-10 cursor-pointer hover:bg-orange-400"
+            className="w-full bg-secondary border border-white border-opacity-5 text-white py-2 px-3 rounded-md mb-10 cursor-pointer hover:bg-orange-400"
             onClick={handleBannerClick}
           >
             <p className="text-center">
