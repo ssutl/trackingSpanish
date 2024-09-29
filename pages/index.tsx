@@ -8,7 +8,7 @@ import { LuPencil } from "react-icons/lu";
 import { PiSignOut } from "react-icons/pi";
 import { IoStatsChart } from "react-icons/io5";
 import { GiProgression } from "react-icons/gi";
-import { PiExportFill } from "react-icons/pi";
+import { MdAccountCircle } from "react-icons/md";
 import { CardsActivityGoal } from "@/components/ui/activity-goal";
 import { GoalMetrics } from "@/components/ui/goal_metric";
 import { createGoalMetrics } from "../helpers/createGoalMetrics";
@@ -201,7 +201,7 @@ export default function Home() {
               : "hover:bg-secondary hover:bg-opacity-10"
           }`}
         >
-          <PiExportFill className="text-xl" />
+          <MdAccountCircle className="text-xl" />
         </button>
       </div>
     );
@@ -512,7 +512,7 @@ export default function Home() {
       >
         {displayTrialBanner && (
           <div
-            className="w-full bg-secondary border border-white border-opacity-5 text-white py-2 px-3 rounded-md mb-10 cursor-pointer"
+            className="w-full bg-orange-600 bg-opacity-1 border border-white border-opacity-5 text-white py-2 px-3 rounded-md mb-10 cursor-pointer hover:bg-orange-400"
             onClick={handleBannerClick}
           >
             <p className="text-center">
