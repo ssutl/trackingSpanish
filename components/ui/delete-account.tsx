@@ -49,7 +49,7 @@ export function DeleteAccount({ handleDelete }: { handleDelete: () => void }) {
         />
         <Button
           variant="destructive"
-          className={`w-full border border-white border-opacity-5 bg-transparent hover:bg-transparent ${
+          className={`w-full border border-white border-opacity-5 bg-transparent  ${
             deleteConfirmation === "DELETE" ? "bg-orange-400" : ""
           }`}
           disabled={deleteConfirmation !== "DELETE"}
