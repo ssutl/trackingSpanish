@@ -1,7 +1,6 @@
 (function () {
   if (window.hasRun) return;
   window.hasRun = true;
-  console.log("SS.UTL injected");
 
   let totalWatchedTime = 0; // in seconds
   let timerInterval = null;
@@ -19,7 +18,6 @@
 
   // Start timer
   function startTimer() {
-    console.log("SS.UTL starting timer");
     if (!timerInterval) {
       timerInterval = setInterval(() => {
         totalWatchedTime++;
@@ -27,10 +25,8 @@
         // Every 60 seconds, send a message if video is in Spanish
         if (totalWatchedTime - lastSentTime >= 60) {
           lastSentTime = totalWatchedTime;
-          console.log("SS.UTL minute passed");
 
           if (isCurrentVideoSpanish) {
-            console.log("SS.UTL sending message to background to add minute");
             chrome.runtime.sendMessage({ type: "WATCHED_ONE_MINUTE" });
           }
         }
@@ -40,7 +36,6 @@
 
   // Stop timer
   function stopTimer() {
-    console.log("SS.UTL stopping timer");
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
@@ -56,7 +51,6 @@
       video &&
       window.location.href.includes("youtube.com/watch")
     ) {
-      console.log("SS.UTL listeners attached");
       // Attach listeners if not already attached
       video.addEventListener("play", startTimer);
       video.addEventListener("pause", stopTimer);
@@ -64,13 +58,10 @@
 
       // Set flag to indicate listeners are attached
       video.dataset.listenersAttached = "true";
-    } else {
-      console.log("SS.UTL listeners already attached");
     }
 
     // Check if video is currently playing and start timer if it is
     if (video && !video.paused) {
-      console.log("SS.UTL video is currently playing, starting timer");
       startTimer();
     }
   }
@@ -87,8 +78,6 @@
       type: "FETCH_VIDEO_DETAILS",
       videoId,
     });
-
-    console.log("SS.UTL video details", res);
 
     const videoDetails = res.videoDetails;
 
@@ -109,7 +98,6 @@
       // We're not orphaned
       return;
     }
-    console.log("SS.UTL unregistering orphaned script");
 
     // Remove event listeners
     window.removeEventListener(orphanMessageId, unregisterOrphan);
@@ -126,9 +114,7 @@
     // Unregister message listeners
     try {
       chrome.runtime.onMessage.removeListener(onMessage);
-    } catch (e) {
-      console.error("Failed to remove message listener", e);
-    }
+    } catch (e) {}
 
     return true;
   }
@@ -136,7 +122,6 @@
   // Message listener function
   function onMessage(request, sender, sendResponse) {
     if (request.type === "TAB_UPDATED") {
-      console.log("SS.UTL tab updated");
       attachListeners();
       checkIfVideoIsSpanish();
     }
@@ -148,7 +133,6 @@
   // listen when local storage is updated
   chrome.storage.onChanged.addListener((res) => {
     if (res["user"]) {
-      console.log("SS.UTL state updated in local storage");
       attachListeners();
       checkIfVideoIsSpanish();
     }

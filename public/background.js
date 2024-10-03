@@ -259,6 +259,7 @@ async function firebaseDeleteAccount() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     if (request.type === "sign_in") {
+      console.log("sign_in request received");
       firebaseAuth()
         .then((auth) => {
           sendResponse({ success: true, type: "sign_in" });
@@ -271,6 +272,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.type === "sign_out") {
       firebaseSignOut()
         .then(() => {
+          console.log("sign_out successful");
           sendResponse({ success: true, type: "sign_out" });
         })
         .catch((error) => {
@@ -297,7 +299,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           const userId = user.uid;
           updateDailyGoal(userId, request.dailyGoal)
             .then((res) => {
-              console.log("res", res);
+              console.log("update daily goal", res);
               sendResponse({ success: true });
             })
             .catch((error) => {
@@ -311,6 +313,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true; // Indicates async response
     } else if (request.type === "isVideoSpanish") {
       isVideoInSpanish(request.videoDetails).then((res) => {
+        console.log("isSpanish", res);
         sendResponse({ success: true, isSpanish: res });
       });
       return true; // Indicates async response
@@ -326,6 +329,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           const userApiKey = user.apiKey;
           fetchVideoDetails(request.videoId, userApiKey)
             .then((res) => {
+              console.log("res", res);
               sendResponse({ success: true, videoDetails: res.videoDetails });
             })
             .catch((error) => {
@@ -339,6 +343,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.type === "DELETE_ACCOUNT") {
       firebaseDeleteAccount()
         .then(() => {
+          console.log("delete account successful");
           sendResponse({ success: true, type: "delete_account" });
         })
         .catch((error) => {
