@@ -88,7 +88,7 @@ export function CardsActivityGoal({ currentDailyGoal, setEditingGoal }) {
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 shrink-0 rounded-full bg-transparent"
+            className="h-8 w-8 shrink-0 rounded-full bg-transparent border-opacity-5"
             onClick={() => {
               if (newDailyGoal >= 10) {
                 setNewDailyGoal(newDailyGoal - 10);
@@ -110,7 +110,7 @@ export function CardsActivityGoal({ currentDailyGoal, setEditingGoal }) {
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 shrink-0 rounded-full bg-transparent"
+            className="h-8 w-8 shrink-0 rounded-full bg-transparent border-opacity-5"
             onClick={() => setNewDailyGoal(newDailyGoal + 10)}
           >
             <Plus className="h-4 w-4" />
