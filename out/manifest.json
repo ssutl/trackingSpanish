@@ -1,9 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Tracking Spanish BETA",
-  "short_name": "TS",
+  "name": "TrackingSpanish",
+  "short_name": "TrackingSpanish",
   "version": "0.0.1",
-  "description": "Track your Spanish learning progress.THIS EXTENSION IS FOR BETA TESTING.",
+  "description": "Track your Spanish learning progress.",
+  "icons": {
+    "16": "/images/icon16.png",
+    "32": "/images/icon32.png",
+    "48": "/images/icon48.png",
+    "192": "/images/icon192.png"
+  },
   "permissions": [
     "offscreen",
     "sidePanel",

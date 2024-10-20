@@ -48,7 +48,7 @@ chrome.runtime.onInstalled.addListener(async () => {
         },
         (results) => {
           if (results && results[0]?.result) {
-            console.log("Content script already injected, skipping.");
+            // console.log("Content script already injected, skipping.");
           } else {
             // Inject the script if it hasn't been injected
             if (cs.js && cs.js.length > 0) {
@@ -103,7 +103,7 @@ async function setupOffscreenDocument(path) {
 async function closeOffscreenDocument() {
   if (await hasDocument()) {
     await chrome.offscreen.closeDocument();
-    console.log("Offscreen document closed");
+    // console.log("Offscreen document closed");
   }
 }
 
@@ -128,7 +128,7 @@ async function updateMinutes(userId) {
       target: "offscreen",
       data: userId,
     });
-    console.log("res from update minutes", res);
+    // console.log("res from update minutes", res);
   } catch (error) {
     console.error("Error updating minutes:", error);
     throw error;
@@ -143,7 +143,7 @@ async function updateDailyGoal(userId, dailyGoal) {
       target: "offscreen",
       data: { userId, dailyGoal },
     });
-    console.log("res from daily goal", res);
+    // console.log("res from daily goal", res);
     return res;
   } catch (error) {
     console.error("Error updating daily goal:", error);
@@ -161,7 +161,7 @@ async function fetchVideoDetails(videoId, apiKey) {
         apiKey,
       },
     });
-    console.log("res from fetch video details", res);
+    // console.log("res from fetch video details", res);
     return res;
   } catch (error) {
     throw error;
@@ -215,7 +215,7 @@ async function firebaseSignOut() {
 
     // Close the offscreen document
     await closeOffscreenDocument();
-    console.log("Sign-out ACTUALLY CLOSED successful");
+    // console.log("Sign-out ACTUALLY CLOSED successful");
 
     return true;
   } catch (error) {
@@ -247,7 +247,7 @@ async function firebaseDeleteAccount() {
     // Close the offscreen document if it exists
     await closeOffscreenDocument();
 
-    console.log("Account deleted successfully and offscreen document closed.");
+    // console.log("Account deleted successfully and offscreen document closed.");
     return true;
   } catch (error) {
     console.error("Error deleting account:", error.message);
@@ -259,7 +259,7 @@ async function firebaseDeleteAccount() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     if (request.type === "sign_in") {
-      console.log("sign_in request received");
+      // console.log("sign_in request received");
       firebaseAuth()
         .then((auth) => {
           sendResponse({ success: true, type: "sign_in" });
@@ -272,18 +272,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.type === "sign_out") {
       firebaseSignOut()
         .then(() => {
-          console.log("sign_out successful");
+          // console.log("sign_out successful");
           sendResponse({ success: true, type: "sign_out" });
         })
         .catch((error) => {
+          console.log("logout error", error);
           sendResponse({ success: false, error: error.message });
         });
       // Indicate that the response is asynchronous
       return true;
     } else if (request.type === "WATCHED_ONE_MINUTE") {
-      console.log("WATCHED_ONE_MINUTE being sent to offscreen");
+      // console.log("WATCHED_ONE_MINUTE being sent to offscreen");
       chrome.storage.local.get(["user"], (result) => {
-        console.log("result", result);
+        // console.log("result", result);
         const user = result.user;
         if (user) {
           const userId = user.uid;
@@ -299,7 +300,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           const userId = user.uid;
           updateDailyGoal(userId, request.dailyGoal)
             .then((res) => {
-              console.log("update daily goal", res);
+              // console.log("update daily goal", res);
               sendResponse({ success: true });
             })
             .catch((error) => {
@@ -313,7 +314,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true; // Indicates async response
     } else if (request.type === "isVideoSpanish") {
       isVideoInSpanish(request.videoDetails).then((res) => {
-        console.log("isSpanish", res);
+        // console.log("isSpanish", res);
         sendResponse({ success: true, isSpanish: res });
       });
       return true; // Indicates async response
@@ -322,14 +323,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
       });
     } else if (request.type === "FETCH_VIDEO_DETAILS") {
-      console.log("SS.UTL video request recieved");
+      // console.log("SS.UTL video request recieved");
       chrome.storage.local.get(["user"], (result) => {
         const user = result.user;
         if (user) {
           const userApiKey = user.apiKey;
           fetchVideoDetails(request.videoId, userApiKey)
             .then((res) => {
-              console.log("res", res);
+              // console.log("res", res);
               sendResponse({ success: true, videoDetails: res.videoDetails });
             })
             .catch((error) => {
@@ -343,7 +344,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.type === "DELETE_ACCOUNT") {
       firebaseDeleteAccount()
         .then(() => {
-          console.log("delete account successful");
+          // console.log("delete account successful");
           sendResponse({ success: true, type: "delete_account" });
         })
         .catch((error) => {
@@ -361,7 +362,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Check if video is in Spanish
 async function isVideoInSpanish(videoDetails) {
-  console.log("videoDetails", videoDetails);
+  // console.log("videoDetails", videoDetails);
   const lowerCaseVideoTags = videoDetails.tags
     ? videoDetails.tags.map((tag) => tag.toLowerCase())
     : [];
@@ -381,14 +382,14 @@ async function isVideoInSpanish(videoDetails) {
   );
 
   const isTitleInSpanish = chromeLanguageTitle.languages[0].language === "es";
-  console.log("isTitleInSpanish", isTitleInSpanish);
+  // console.log("isTitleInSpanish", isTitleInSpanish);
 
   const chromeLanguageDescription = await chrome.i18n.detectLanguage(
     videoDetails.description
   );
   const isDescriptionInSpanish =
     chromeLanguageDescription.languages[0].language === "es";
-  console.log("isDescriptionInSpanish", isDescriptionInSpanish);
+  // console.log("isDescriptionInSpanish", isDescriptionInSpanish);
 
   const watchingSpanish =
     doesVideoTagsHaveSpanish ||
@@ -396,7 +397,7 @@ async function isVideoInSpanish(videoDetails) {
     isDescriptionInSpanish ||
     defaultAudioLanguage.includes("es");
 
-  console.log("watchingSpanish", watchingSpanish);
+  // console.log("watchingSpanish", watchingSpanish);
 
   return watchingSpanish;
 }
@@ -407,7 +408,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     //check if user is in local storage
     chrome.storage.local.get("user", (result) => {
       const user = result.user;
-      console.log("user", user);
+      // console.log("user", user);
       if (user) {
         setTimeout(() => {
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

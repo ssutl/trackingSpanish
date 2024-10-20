@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Tracking Spanish",
-  "short_name": "TS",
+  "name": "TrackingSpanish",
+  "short_name": "TrackingSpanish",
   "version": "0.0.1",
   "description": "Track your Spanish learning progress.",
   "icons": {

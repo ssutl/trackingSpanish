@@ -165,7 +165,7 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <h1 className="text-xl font-medium">Tracking Spanish</h1>
+        <h1 className="text-xl font-medium">TrackingSpanish</h1>
       )}
     </div>
   );
