@@ -413,9 +413,11 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         setTimeout(() => {
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const activeTab = tabs[0];
-            chrome.tabs.sendMessage(activeTab.id, {
-              type: "TAB_UPDATED",
-            });
+            if (activeTab.url.includes("youtube.com")) {
+              chrome.tabs.sendMessage(activeTab.id, {
+                type: "TAB_UPDATED",
+              });
+            }
           });
         }, 1000);
       }
