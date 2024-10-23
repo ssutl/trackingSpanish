@@ -135,6 +135,23 @@ async function updateMinutes(userId) {
   }
 }
 
+// Function to update minutes in offscreen with custom minutes
+async function addMinutes(userId, minutes) {
+  console.log("add minutes", userId, minutes);
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: "add-minutes",
+      target: "offscreen",
+      data: { userId, minutes },
+    });
+
+    console.log("res from add minutes", res);
+  } catch (error) {
+    console.error("Error updating minutes:", error);
+    throw error;
+  }
+}
+
 // Function to update daily goal in offscreen
 async function updateDailyGoal(userId, dailyGoal) {
   try {
@@ -354,6 +371,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       // Indicate that the response is asynchronous
       return true;
+    } else if (request.type === "ADD_MINUTES") {
+      // console.log("WATCHED_ONE_MINUTE being sent to offscreen");
+      chrome.storage.local.get(["user"], (result) => {
+        // console.log("result", result);
+        const user = result.user;
+        console.log(request);
+
+        if (user && request.duration) {
+          const userId = user.uid;
+          addMinutes(userId, request.duration);
+        }
+      });
+      return false;
     }
   } catch (error) {
     sendResponse({ success: false, error: error.message });
