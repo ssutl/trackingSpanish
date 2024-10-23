@@ -2,6 +2,22 @@
   if (window.hasRun) return;
   window.hasRun = true;
 
+  function getTotalMinutes(durationText) {
+    const timeParts = durationText.split(":").map(Number); // Split by colon and convert each part to a number
+
+    let totalMinutes = 0;
+
+    if (timeParts.length === 3) {
+      // Format is hh:mm:ss
+      totalMinutes = timeParts[0] * 60 + timeParts[1] + timeParts[2] / 60;
+    } else if (timeParts.length === 2) {
+      // Format is mm:ss
+      totalMinutes = timeParts[0] + timeParts[1] / 60;
+    }
+
+    return Math.ceil(totalMinutes); // Return total minutes, rounded up
+  }
+
   function observeVideoChanges() {
     const targetNode = document.querySelector("ytd-item-section-renderer"); // Adjust to the container of the video list
 
@@ -24,67 +40,55 @@
   // Call this function after page load or initial button injection
   observeVideoChanges();
 
-  function injectCustomStyles() {
-    const style = document.createElement("style");
-    style.innerHTML = `
-      #metadata {
-        text-align: center;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
   function injectButton() {
-    injectCustomStyles();
     // Check if on the history page
-    if (window.location.href.includes("youtube.com/feed/history")) {
-      const buttonOnSite = document.querySelectorAll("#metadata"); // Select all elements with the class
+    // Check if on the history page
+    const isHistoryPage = window.location.href.includes(
+      "youtube.com/feed/history"
+    );
+
+    if (isHistoryPage) {
+      const buttonOnSite = document.querySelectorAll("#metadata"); // Select all metadata elements
 
       buttonOnSite.forEach((element, index) => {
-        //align all text in these divs center
         // Ensure button is not already injected into this element
         if (!element.querySelector("#injectedButton-" + index)) {
-          //make metadata div flex column
-
           // Create container div to hold the "+" and image
           const containerDiv = document.createElement("div");
-          containerDiv.id = "injectedButton-" + index; // Assign unique ID to container
-          containerDiv.style.display = "inline-flex"; // Align "+" and image horizontally
-          containerDiv.style.alignItems = "center"; // Vertically center the contents
-          containerDiv.style.cursor = "pointer"; // Make the whole container clickable
+          containerDiv.id = "injectedButton-" + index; // Assign unique ID
+          containerDiv.style.display = "inline-flex";
+          containerDiv.style.alignItems = "center";
+          containerDiv.style.cursor = "pointer";
 
-          containerDiv.addEventListener("mouseover", function () {
-            //Make div opacity 0.5 on hover
+          containerDiv.addEventListener("mouseover", () => {
             containerDiv.style.opacity = "0.7";
           });
 
-          containerDiv.addEventListener("mouseout", function () {
+          containerDiv.addEventListener("mouseout", () => {
             containerDiv.style.opacity = "1";
           });
 
-          // Create the "+" span (instead of a button to integrate with the image)
+          // Create "+" span
           const plusSpan = document.createElement("span");
-          const plusText = document.createTextNode("+");
-          plusSpan.appendChild(plusText);
-          plusSpan.style.color = "#ffa726"; // Set text color to white
-          plusSpan.style.padding = "5px"; // Add some padding
-          plusSpan.style.fontSize = "18px"; // Adjust font size
-          plusSpan.style.fontWeight = "bold"; // Make the text bold
-          plusSpan.style.marginRight = "4px"; // Add some space between the "+" and the image
+          plusSpan.textContent = "+";
+          plusSpan.style.color = "#ffa726";
+          plusSpan.style.padding = "5px";
+          plusSpan.style.fontSize = "18px";
+          plusSpan.style.fontWeight = "bold";
+          plusSpan.style.marginRight = "4px";
 
           // Create the image element
           const img = document.createElement("img");
           img.src = chrome.runtime.getURL("images/icon32.png");
-          img.style.width = "20px"; // Adjust the size of the image
-          img.style.height = "20px"; // Adjust the size of the image
-          img.style.borderRadius = "3px"; // Make the image circular
-          img.style.marginRight = "12px"; // Add some space between the "+" and the image
+          img.style.width = "20px";
+          img.style.height = "20px";
+          img.style.marginRight = "12px";
 
           // Append "+" and image to the container
           containerDiv.appendChild(plusSpan);
           containerDiv.appendChild(img);
 
-          // Add click event listener to the container div (makes both "+" and image clickable)
+          // Add click event listener to the container div
           containerDiv.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -95,36 +99,28 @@
                 "ytd-thumbnail-overlay-time-status-renderer span"
               );
 
-            // Extract the text content of the duration (if available)
             const videoDuration = durationElement
-              ? durationElement.innerText.trim()
+              ? getTotalMinutes(durationElement.innerText.trim())
               : null;
 
             if (videoDuration) {
-              const roundedDuration = Math.ceil(videoDuration);
-
-              if (isNaN(roundedDuration)) {
-                return;
-              }
-              // Send the duration along with the message
               chrome.runtime.sendMessage({
                 type: "ADD_MINUTES",
-                duration: roundedDuration,
+                duration: videoDuration,
               });
             }
-
-            console.log(
-              "SSUTL Container clicked: " +
-                containerDiv.id +
-                ", Duration: " +
-                videoDuration
-            );
           });
 
           // Insert the container div at the start of the element
           element.prepend(containerDiv);
         }
       });
+    } else {
+      // Remove all injected buttons when not on the history page
+      const injectedButtons = document.querySelectorAll(
+        '[id^="injectedButton-"]'
+      );
+      injectedButtons.forEach((element) => element.remove());
     }
   }
 
