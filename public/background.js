@@ -411,14 +411,14 @@ async function isVideoInSpanish(videoDetails) {
     videoDetails.title
   );
 
-  const isTitleInSpanish = chromeLanguageTitle.languages[0].language === "es";
+  const isTitleInSpanish = chromeLanguageTitle.languages[0]?.language === "es";
   // console.log("isTitleInSpanish", isTitleInSpanish);
 
   const chromeLanguageDescription = await chrome.i18n.detectLanguage(
     videoDetails.description
   );
   const isDescriptionInSpanish =
-    chromeLanguageDescription.languages[0].language === "es";
+    chromeLanguageDescription.languages[0]?.language === "es";
   // console.log("isDescriptionInSpanish", isDescriptionInSpanish);
 
   const watchingSpanish =
